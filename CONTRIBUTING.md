@@ -1,5 +1,26 @@
 # Contributing
 
+## Fase awal: lokal dulu, rilis ditahan
+
+Sampai aplikasi selesai, **tidak ada rilis**. Semua kerja dilakukan di lokal; aturan PR, CI, dan release-please di bawah berlaku setelah fase ini berakhir.
+
+- Tetap satu branch per perubahan (`feat/`, `fix/`, ...), dibuat dari `main` lokal.
+- Selesai satu perubahan: `make lint && make test`, lalu **squash merge lokal** ke `main` dengan pesan Conventional Commits. Pesan inilah yang nanti dibaca release-please untuk CHANGELOG, jadi tulis dengan rapi.
+
+```bash
+git switch main
+git switch -c feat/<nama>
+# ... kerja + commit sebebasnya ...
+make lint && make test
+git switch main
+git merge --squash feat/<nama>
+git commit -m "feat(scope): ringkasan"
+git branch -D feat/<nama>          # -D karena squash tidak tercatat sebagai merge
+```
+
+- Push `main` ke GitHub boleh kapan saja sebagai backup; itu tidak merilis apa pun selama PR rilis tidak di-merge.
+- Saat aplikasi siap dirilis: push `main`, release-please memperbarui PR rilis dengan semua perubahan yang terkumpul, lalu merge PR itu. Rilis pertama dari `0.0.0` menjadi `0.1.0`; untuk langsung `1.0.0`, tambahkan footer `Release-As: 1.0.0` di commit terakhir.
+
 ## Branching (trunk-based)
 
 | Branch | Isi |
