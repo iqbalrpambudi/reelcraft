@@ -113,3 +113,89 @@ button:disabled {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+a {
+  color: var(--accent);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+section {
+  margin-top: 32px;
+}
+
+label.button {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.steps {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.step {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.step-done .badge {
+  color: #16a34a;
+}
+
+.step-failed .badge {
+  color: var(--danger);
+}
+
+.step-running {
+  border-color: var(--accent);
+}
+
+.badge {
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+progress {
+  width: 100%;
+}
+
+.scenes {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.scenes img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60ch;
+}
+
+.list li > div {
+  min-width: 0;
+}

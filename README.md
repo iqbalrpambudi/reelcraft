@@ -16,7 +16,7 @@ make web-build      # build dashboard ke dalam package
 uv run reelcraft serve
 ```
 
-Dashboard terbuka di http://127.0.0.1:8765. Data disimpan di `~/.reelcraft` (ubah dengan `REELCRAFT_DATA_DIR`).
+Dashboard terbuka di http://127.0.0.1:8765: buat project, tambah media (URL, path, atau unggah), jalankan pipeline dan pantau progresnya live, lalu lihat scene hasil analisis. Run dari web masuk antrean dan dikerjakan satu per satu oleh worker di dalam `serve`; run dari CLI juga terlihat live di web. Data disimpan di `~/.reelcraft` (ubah dengan `REELCRAFT_DATA_DIR`).
 
 ## CLI
 

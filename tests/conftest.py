@@ -12,7 +12,10 @@ from reelcraft.storage.db import get_engine
 @pytest.fixture(autouse=True)
 def isolated_data_dir(tmp_path, monkeypatch) -> Iterator[None]:
     """Every test gets its own empty, migrated database; never the user's ~/.reelcraft."""
-    monkeypatch.setenv("REELCRAFT_DATA_DIR", str(tmp_path))
+    # Behind a symlink on purpose: data dirs often are (macOS /var), and paths must still match
+    (tmp_path / "real").mkdir()
+    (tmp_path / "data").symlink_to(tmp_path / "real")
+    monkeypatch.setenv("REELCRAFT_DATA_DIR", str(tmp_path / "data"))
     get_settings.cache_clear()
     get_engine.cache_clear()
     yield

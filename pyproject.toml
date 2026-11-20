@@ -11,6 +11,7 @@ dependencies = [
     "fastapi>=0.165.0",
     "opencv-python-headless>=5.1.0.95",
     "pydantic-settings>=2.16.3",
+    "python-multipart>=0.0.34",
     "scenedetect>=0.7.3",
     "sqlalchemy>=2.1.9",
     "typer>=0.29.2",

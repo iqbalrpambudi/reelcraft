@@ -55,8 +55,15 @@ def plan(session: Session, project_id: str, start: str | None, end: str | None) 
     return names[first : last + 1]
 
 
-def claim(project_id: str, start: str | None, end: str | None) -> list[str]:
-    """Validate and reserve a run; raises if the project is already running."""
+BUSY = ("reserved", "queued", "running")
+
+
+def claim(project_id: str, start: str | None, end: str | None, queue: bool = False) -> list[str]:
+    """Validate and reserve a run; raises if the project is busy.
+
+    queue=False: the caller executes right away in its own process (CLI).
+    queue=True: the server worker picks it up, in FIFO order, even after a restart.
+    """
     with session_scope() as s:
         if not s.get(Project, project_id):
             raise NotFound(f"Project {project_id} tidak ditemukan")
@@ -64,14 +71,33 @@ def claim(project_id: str, start: str | None, end: str | None) -> list[str]:
         runs = ensure_runs(s, project_id)
         # shortcut: check-then-set in one transaction; two processes starting in the same
         # instant could both pass. Upgrade to a lock row if runs get triggered automatically.
-        if any(r.status in ("running", "queued") for r in runs):
+        if any(r.status in BUSY for r in runs):
             raise ReelcraftError("Project ini sedang diproses. Tunggu atau batalkan dulu.")
         if steps:
             invalidate(s, project_id, steps[0])
+            now = utcnow()
             for r in runs:
                 if r.step in steps:
-                    r.status = "queued"
+                    r.status, r.queued_at = ("queued" if queue else "reserved"), now
     return steps
+
+
+def next_queued() -> tuple[str, list[str]] | None:
+    """The project queued longest ago, with its queued steps in pipeline order."""
+    with session_scope() as s:
+        first = s.scalars(
+            select(StepRun).where(StepRun.status == "queued").order_by(StepRun.queued_at).limit(1)
+        ).first()
+        if not first:
+            return None
+        queued = set(
+            s.scalars(
+                select(StepRun.step).where(
+                    StepRun.project_id == first.project_id, StepRun.status == "queued"
+                )
+            )
+        )
+        return first.project_id, [step for step in STEPS if step in queued]
 
 
 def execute(project_id: str, steps: list[str], listener: Listener | None = None) -> str:
@@ -125,19 +151,29 @@ def request_cancel(project_id: str) -> bool:
             .where(StepRun.project_id == project_id, StepRun.status == "running")
             .values(cancel_requested=True)
         )
-        _release_in(s, project_id, None)  # queued steps never start
-        return bool(getattr(result, "rowcount", 0))
+        released = _release_in(s, project_id, None)  # waiting steps never start
+        return bool(getattr(result, "rowcount", 0)) or released
 
 
 def recover_interrupted() -> None:
-    """At server start: a step left running/queued belongs to a process that no longer exists."""
-    # shortcut: also hits a CLI run that is genuinely in progress while the server starts;
-    # store the owning PID on the run if that turns out to matter.
+    """At server start. A step left running belongs to a process that died: mark it failed and
+    drop what was waiting behind it. Queued runs of other projects survive and resume."""
+    # shortcut: also hits a CLI run genuinely in progress while the server starts; store the
+    # owning PID on the run if that turns out to matter.
     with session_scope() as s:
+        dead = list(s.scalars(select(StepRun.project_id).where(StepRun.status == "running")))
         s.execute(
             update(StepRun)
-            .where(StepRun.status.in_(("running", "queued")))
+            .where(StepRun.status == "running")
             .values(status="failed", error="Terhenti karena proses berhenti", finished_at=utcnow())
+        )
+        s.execute(
+            update(StepRun)
+            .where(
+                (StepRun.status == "reserved")
+                | ((StepRun.status == "queued") & StepRun.project_id.in_(dead))
+            )
+            .values(status="pending")
         )
 
 
@@ -156,8 +192,10 @@ def _release(project_id: str, steps: list[str]) -> None:
         _release_in(s, project_id, steps)
 
 
-def _release_in(s: Session, project_id: str, steps: list[str] | None) -> None:
-    query = update(StepRun).where(StepRun.project_id == project_id, StepRun.status == "queued")
+def _release_in(s: Session, project_id: str, steps: list[str] | None) -> bool:
+    query = update(StepRun).where(
+        StepRun.project_id == project_id, StepRun.status.in_(("reserved", "queued"))
+    )
     if steps is not None:
         query = query.where(StepRun.step.in_(steps))
-    s.execute(query.values(status="pending"))
+    return bool(getattr(s.execute(query.values(status="pending")), "rowcount", 0))

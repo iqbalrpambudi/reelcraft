@@ -14,16 +14,16 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] CRUD project: service, API, CLI (`reelcraft project`), web
 - [x] Type web di-generate dari OpenAPI; lint cek migrasi & type
 
-## v0.3 Pipeline engine, Ingest, Analyze
+## v0.3 Pipeline engine, Ingest, Analyze ✅
 - [x] Kontrak step + runner: status per step di DB, jalankan rentang step, step hilir di-reset saat step hulu diulang, cegah run ganda per project, batal kooperatif
 - [x] CLI `reelcraft run <project> [--from] [--to]` dan `reelcraft status <project>` dengan progress
 - [x] Media: tambah dari file lokal / URL lewat CLI (`reelcraft media`)
-- [ ] Media dari web: upload file / URL
+- [x] Media dari web: upload file / URL / path lokal
 - [x] Step Ingest: salin file atau unduh via yt-dlp (sampai 1080p, solver JS bawaan), probe metadata (ffprobe)
 - [x] Step Analyze: deteksi scene (PySceneDetect) + thumbnail per scene
-- [ ] Job queue (Huey, SQLite) untuk run dari web, worker berjalan di dalam `reelcraft serve`
-- [ ] Progress live ke web via SSE; tombol batal
-- [ ] Web: routing, halaman detail project dengan stepper segment, daftar media & scene
+- [x] Job queue untuk run dari web: `step_runs` sebagai antrean, worker di dalam `reelcraft serve` (ADR 0002)
+- [x] Progress live ke web via SSE; tombol batal
+- [x] Web: routing, halaman detail project dengan stepper segment, daftar media & scene
 - [x] `reelcraft doctor`: cek ffmpeg, data dir, versi
 
 ## v0.4 Settings & AI
@@ -58,7 +58,7 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 ## v0.9 Publish & Autopilot
 - [ ] Publish YouTube (OAuth + upload terjadwal)
 - [ ] Publish Facebook Page Reels
-- [ ] Autopilot: pool video, jadwal produksi & slot posting sebagai periodic task Huey
+- [ ] Autopilot: pool video, jadwal produksi & slot posting (pilih penjadwal, lihat ADR 0002)
 
 ## v0.10 QC
 - [ ] Gate kualitas per step (port `qc.py`, dipecah per pemeriksaan)

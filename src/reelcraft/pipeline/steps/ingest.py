@@ -8,6 +8,7 @@ from reelcraft.media.download import download, is_url
 from reelcraft.media.probe import probe
 from reelcraft.pipeline.context import Cancelled, StepContext
 from reelcraft.storage.db import session_scope
+from reelcraft.storage.files import UPLOADS
 from reelcraft.storage.models import Media
 
 
@@ -34,7 +35,10 @@ def run(ctx: StepContext) -> None:
             else:
                 path = stem.with_suffix(Path(m.source).suffix.lower() or ".mp4")
                 path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(m.source, path)
+                # Web uploads already live in the project: move them; never touch a user's file
+                # resolve both: the data dir may sit behind a symlink (macOS /var -> /private/var)
+                uploaded = Path(m.source).resolve().is_relative_to((ctx.dir / UPLOADS).resolve())
+                (shutil.move if uploaded else shutil.copy2)(m.source, path)
             info = probe(path)
             fields = {
                 "status": "ready",

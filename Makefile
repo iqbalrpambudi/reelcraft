@@ -21,8 +21,10 @@ lint:
 	uv run lint-imports
 	@# models and migrations must agree; checked against a throwaway database
 	REELCRAFT_DATA_DIR=$$(mktemp -d) sh -c 'uv run alembic upgrade head && uv run alembic check'
-	@# web types must match the API
-	$(MAKE) api-types && git diff --exit-code web/src/api/schema.d.ts
+	@# web types must match the API (compares files, so unstaged regenerations pass)
+	@$(MAKE) -s api-types out=$$(pwd)/web/.schema-check.d.ts && \
+	  (diff -q web/.schema-check.d.ts web/src/api/schema.d.ts >/dev/null; rc=$$?; rm -f web/.schema-check.d.ts; \
+	   [ $$rc -eq 0 ] || { echo "web/src/api/schema.d.ts is stale: run make api-types"; exit 1; })
 	cd web && npm run lint && npm run typecheck
 
 format:
@@ -35,10 +37,11 @@ web-build:
 build: web-build  ## Wheel + sdist in dist/, web dashboard included
 	uv build
 
+out ?= src/api/schema.d.ts
 api-types:  ## Regenerate web/src/api/schema.d.ts from the FastAPI app
 	@tmp=$$(mktemp) && \
 	uv run python -c "import json; from reelcraft.api.app import create_app; print(json.dumps(create_app().openapi()))" > $$tmp && \
-	cd web && npx --yes openapi-typescript@7.13.0 $$tmp -o src/api/schema.d.ts
+	cd web && npx --yes openapi-typescript@7.13.0 $$tmp -o $(out) >/dev/null
 	@# shortcut: npx-pinned generator because 7.x peers on TypeScript 5; install it once it supports TS 7
 
 migration:  ## New migration from model changes: make migration m="add scenes"

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { api, errorMessage, type Project } from './api/client'
 
 export function Projects() {
@@ -73,7 +74,9 @@ export function Projects() {
           {projects.map((p) => (
             <li key={p.id} className="row">
               <div>
-                <strong>{p.name}</strong>
+                <Link to={`/projects/${p.id}`}>
+                  <strong>{p.name}</strong>
+                </Link>
                 <div className="muted small">
                   {p.id.slice(0, 8)} · dibuat {new Date(p.created_at).toLocaleString()}
                 </div>

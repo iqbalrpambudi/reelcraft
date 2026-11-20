@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link, Route, Routes } from 'react-router'
 import { api } from './api/client'
+import { ProjectPage } from './ProjectPage'
 import { Projects } from './Projects'
 
 export default function App() {
@@ -12,10 +14,16 @@ export default function App() {
   return (
     <main>
       <header>
-        <h1>Reelcraft</h1>
-        {version && <span className="muted">v{version}</span>}
+        <Link to="/" className="brand">
+          Reelcraft
+        </Link>
+        {version && <span className="muted small">v{version}</span>}
       </header>
-      <Projects />
+      <Routes>
+        <Route path="/" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectPage />} />
+        <Route path="*" element={<p>Halaman tidak ditemukan.</p>} />
+      </Routes>
     </main>
   )
 }

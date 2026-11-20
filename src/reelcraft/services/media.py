@@ -1,5 +1,8 @@
+import shutil
 from datetime import datetime
 from pathlib import Path
+from typing import BinaryIO
+from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, select
@@ -8,7 +11,7 @@ from sqlalchemy.orm import Session
 from reelcraft.core.errors import NotFound, ReelcraftError
 from reelcraft.media.download import is_url
 from reelcraft.pipeline import runner
-from reelcraft.storage.files import project_dir
+from reelcraft.storage.files import UPLOADS, project_dir
 from reelcraft.storage.models import Media, Project, Scene
 
 
@@ -54,6 +57,18 @@ def add(session: Session, project_id: str, source: str) -> MediaOut:
     runner.invalidate(session, project_id, "ingest")
     session.flush()
     return MediaOut.model_validate(media)
+
+
+def upload(session: Session, project_id: str, filename: str, data: BinaryIO) -> MediaOut:
+    """Store an uploaded file in the project, then register it like a local file."""
+    if not session.get(Project, project_id):
+        raise NotFound(f"Project {project_id} tidak ditemukan")
+    # Only the extension of the client's name is kept, so it can't steer the path
+    dest = project_dir(project_id) / UPLOADS / f"{uuid4().hex}{Path(filename).suffix.lower()}"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with dest.open("wb") as out:
+        shutil.copyfileobj(data, out)
+    return add(session, project_id, str(dest))
 
 
 def list_for(session: Session, project_id: str) -> list[MediaOut]:

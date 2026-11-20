@@ -60,8 +60,10 @@ class StepRun(Base):
         ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True
     )
     step: Mapped[str] = mapped_column(String(20), primary_key=True)
-    # pending, queued (claimed by a run), running, done, failed, cancelled
+    # pending; reserved (claimed by an in-process run, e.g. the CLI) or queued (waiting for the
+    # server worker); running; done, failed, cancelled
     status: Mapped[str] = mapped_column(String(20), default="pending")
+    queued_at: Mapped[datetime | None] = mapped_column(UTCDateTime)  # FIFO order of the queue
     progress: Mapped[int] = mapped_column(Integer, default=0)
     message: Mapped[str | None] = mapped_column(Text)
     error: Mapped[str | None] = mapped_column(Text)

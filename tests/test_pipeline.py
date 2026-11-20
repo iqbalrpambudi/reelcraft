@@ -5,13 +5,14 @@ from typer.testing import CliRunner
 
 from reelcraft.cli import app
 from reelcraft.core.errors import ReelcraftError
-from reelcraft.pipeline import runner
+from reelcraft.pipeline import runner, worker
 from reelcraft.pipeline.context import StepContext
 from reelcraft.pipeline.steps import ingest
 from reelcraft.services import media, pipeline, projects
 from reelcraft.services.projects import ProjectCreate
 from reelcraft.storage.db import session_scope
 from reelcraft.storage.files import project_dir
+from reelcraft.storage.models import StepRun
 
 
 def _project_with(source) -> str:
@@ -88,10 +89,39 @@ def test_claim_rejects_double_run_and_bad_ranges(sample_video):
     with pytest.raises(ReelcraftError, match="setelah"):
         runner.claim(pid, "analyze", "ingest")
     assert runner.claim(pid, None, None) == ["ingest", "analyze"]
+    assert _statuses(pid) == {"ingest": "reserved", "analyze": "reserved"}
     with pytest.raises(ReelcraftError, match="sedang diproses"):
-        runner.claim(pid, None, None)
+        runner.claim(pid, None, None, queue=True)
+    runner.recover_interrupted()  # the reserving process is gone
+    assert _statuses(pid) == {"ingest": "pending", "analyze": "pending"}
+
+
+def test_server_queue_is_fifo_and_ignores_cli_reservations(sample_video):
+    first, second, cli = (_project_with(sample_video) for _ in range(3))
+    runner.claim(first, None, "ingest", queue=True)
+    runner.claim(second, None, None, queue=True)
+    runner.claim(cli, None, None)  # reserved for an in-process run, not for the worker
+
+    assert runner.next_queued() == (first, ["ingest"])
+    assert worker.run_next()
+    assert runner.next_queued() == (second, ["ingest", "analyze"])
+    assert worker.run_next()
+    assert not worker.run_next()
+    assert _statuses(first) == {"ingest": "done", "analyze": "pending"}
+    assert _statuses(second) == {"ingest": "done", "analyze": "done"}
+    assert _statuses(cli) == {"ingest": "reserved", "analyze": "reserved"}
+
+
+def test_recovery_drops_steps_behind_a_dead_run_but_keeps_other_queues(sample_video):
+    dead, waiting = _project_with(sample_video), _project_with(sample_video)
+    runner.claim(dead, None, None, queue=True)
+    runner.claim(waiting, None, None, queue=True)
+    with session_scope() as s:  # simulate a crash in the middle of `dead`'s ingest
+        s.get(StepRun, (dead, "ingest")).status = "running"
+
     runner.recover_interrupted()
-    assert _statuses(pid) == {"ingest": "failed", "analyze": "failed"}
+    assert _statuses(dead) == {"ingest": "failed", "analyze": "pending"}
+    assert _statuses(waiting) == {"ingest": "queued", "analyze": "queued"}
 
 
 def test_add_missing_local_file_is_rejected():
