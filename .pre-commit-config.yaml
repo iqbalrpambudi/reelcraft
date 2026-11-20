@@ -8,11 +8,13 @@ repos:
         entry: uv run ruff check --fix
         language: system
         types: [python]
+        stages: [pre-commit]
       - id: ruff-format
         name: ruff format
         entry: uv run ruff format
         language: system
         types: [python]
+        stages: [pre-commit]
       - id: conventional-commit
         name: conventional commit message
         entry: uv run cz check --allow-abort --commit-msg-file
