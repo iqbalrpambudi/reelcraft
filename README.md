@@ -32,9 +32,16 @@ reelcraft run 6c75                   # lanjut dari step yang belum selesai
 reelcraft run 6c75 --from analyze    # ulang dari step tertentu (step setelahnya ikut di-reset)
 reelcraft status 6c75
 reelcraft doctor                     # cek ffmpeg, data dir, dashboard
+
+reelcraft config set gemini_api_key  # diminta tanpa echo, disimpan terenkripsi
+reelcraft config set vision_model google:gemini-flash-lite-latest
+reelcraft config list               # nilai + asalnya (db, env, default)
+reelcraft config check              # uji koneksi model teks & vision
 ```
 
-Pipeline per project: `ingest` (salin/unduh media, baca metadata) → `analyze` (deteksi scene + thumbnail) → step berikutnya menyusul (lihat [docs/ROADMAP.md](docs/ROADMAP.md)).
+API key bisa juga lewat environment atau `.env` (`REELCRAFT_GEMINI_API_KEY=...`); nilai yang disimpan lewat Settings/`config set` didahulukan. Model ditulis `provider:model` dengan provider `google` atau `openai` (OpenAI-compatible: OpenRouter, Ollama, LM Studio lewat base URL).
+
+Pipeline per project: `ingest` (salin/unduh media, baca metadata) → `analyze` (deteksi scene + thumbnail) → `tag` (deskripsi & tag tiap scene oleh model vision) → step berikutnya menyusul (lihat [docs/ROADMAP.md](docs/ROADMAP.md)).
 
 ## Development
 
@@ -54,12 +61,15 @@ src/reelcraft/
 ├─ cli/        Typer; satu file per kelompok perintah
 ├─ api/        FastAPI, router tipis + serve web build
 ├─ services/   use case yang dipakai bersama CLI & API
+├─ pipeline/   runner, antrean, dan step (ingest, analyze, tag)
+├─ ai/         model pydantic-ai dari Settings, prompt & output terstruktur
+├─ media/      ffmpeg, scene detection, yt-dlp
 ├─ storage/    model SQLAlchemy, session, migrasi Alembic
-└─ core/       config & error; tidak import apa pun dari layer lain
+└─ core/       config, error, enkripsi secret; tidak import apa pun dari layer lain
 web/           dashboard React + Vite; src/api/schema.d.ts di-generate
 docs/adr/      catatan keputusan arsitektur
 ```
 
-Arah dependensi `cli → api → services → storage → core` dijaga oleh `lint-imports`. Skema DB hanya berubah lewat migrasi; aplikasi otomatis migrate saat start.
+Arah dependensi `cli → api → services → pipeline → ai → storage | media → core` dijaga oleh `lint-imports`. Skema DB hanya berubah lewat migrasi; aplikasi otomatis migrate saat start.
 
 Lihat [CONTRIBUTING.md](CONTRIBUTING.md) untuk branching, commit, dan rilis.

@@ -1,9 +1,13 @@
+import os
 from collections.abc import Iterator
 from pathlib import Path
 
 import cv2
 import numpy as np
 import pytest
+from pydantic_ai import BinaryContent
+from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from reelcraft.core.config import get_settings
 from reelcraft.storage.db import get_engine
@@ -16,6 +20,10 @@ def isolated_data_dir(tmp_path, monkeypatch) -> Iterator[None]:
     (tmp_path / "real").mkdir()
     (tmp_path / "data").symlink_to(tmp_path / "real")
     monkeypatch.setenv("REELCRAFT_DATA_DIR", str(tmp_path / "data"))
+    # Never pick up the developer's real keys: no REELCRAFT_* env, no .env from the repo
+    for name in [n for n in os.environ if n.startswith("REELCRAFT_") and n != "REELCRAFT_DATA_DIR"]:
+        monkeypatch.delenv(name)
+    monkeypatch.chdir(tmp_path)
     get_settings.cache_clear()
     get_engine.cache_clear()
     yield
@@ -35,3 +43,24 @@ def sample_video(tmp_path_factory) -> Path:
             writer.write(frame)
     writer.release()
     return path
+
+
+def _describe_every_image(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+    images = sum(
+        isinstance(c, BinaryContent)
+        for part in messages[-1].parts
+        for c in (getattr(part, "content", None) or [])
+        if not isinstance(getattr(part, "content", None), str)
+    )
+    scenes = [
+        {"image": i, "description": f"Gambar {i}", "tags": ["uji"]} for i in range(1, images + 1)
+    ]
+    return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, {"scenes": scenes})])
+
+
+@pytest.fixture(autouse=True)
+def offline_vision(monkeypatch) -> None:
+    """Pipeline runs in tests never reach a real AI provider; tests may override this."""
+    from reelcraft.pipeline.steps import tag
+
+    monkeypatch.setattr(tag, "model_for", lambda task: FunctionModel(_describe_every_image))

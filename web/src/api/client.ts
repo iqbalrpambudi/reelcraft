@@ -9,6 +9,8 @@ export type Project = Schemas['ProjectOut']
 export type Media = Schemas['MediaOut']
 export type Scene = Schemas['SceneOut']
 export type StepRun = Schemas['StepRunOut']
+export type SettingItem = Schemas['SettingOut']
+export type AICheck = Schemas['AICheck']
 
 /** URL of a file inside a project's data dir (thumbnails, media, renders). */
 export const fileUrl = (projectId: string, path: string) =>

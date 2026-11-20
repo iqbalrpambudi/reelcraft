@@ -26,11 +26,11 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Web: routing, halaman detail project dengan stepper segment, daftar media & scene
 - [x] `reelcraft doctor`: cek ffmpeg, data dir, versi
 
-## v0.4 Settings & AI
-- [ ] Settings di DB, secret terenkripsi (Fernet, key di data dir)
-- [ ] Adapter LLM via pydantic-ai: Gemini & OpenAI-compatible, pilih model per tugas
-- [ ] Vision tagging scene (bagian dari Analyze), retry untuk scene yang gagal
-- [ ] Halaman Settings di web, `reelcraft config` di CLI
+## v0.4 Settings & AI ✅
+- [x] Settings di DB, secret terenkripsi (Fernet, key di data dir)
+- [x] Adapter LLM via pydantic-ai: Gemini & OpenAI-compatible, pilih model per tugas
+- [x] Vision tagging scene (step `tag` setelah Analyze), retry 5xx dengan backoff, run ulang hanya untuk scene yang gagal
+- [x] Halaman Settings di web, `reelcraft config` di CLI
 
 ## v0.5 Script & Voice
 - [ ] Template narasi (preset + kustom)

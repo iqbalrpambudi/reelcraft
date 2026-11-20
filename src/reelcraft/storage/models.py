@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from reelcraft.storage.db import Base, UTCDateTime, utcnow
@@ -49,6 +49,10 @@ class Scene(Base):
     start: Mapped[float] = mapped_column(Float)  # seconds
     end: Mapped[float] = mapped_column(Float)
     thumbnail: Mapped[str | None] = mapped_column(String(500))  # relative to the project dir
+    # Filled by the Tag step; None = not described yet
+    description: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[list[str] | None] = mapped_column(JSON)
+    tag_error: Mapped[str | None] = mapped_column(Text)
 
 
 class StepRun(Base):
@@ -70,3 +74,13 @@ class StepRun(Base):
     cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
     started_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+
+class Setting(Base):
+    """A value saved from the web or CLI; secrets are stored encrypted."""
+
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)

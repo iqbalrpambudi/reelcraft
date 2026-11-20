@@ -6,7 +6,7 @@ import cv2
 from scenedetect import ContentDetector, SceneManager, open_video
 
 PROGRESS_CHUNKS = 20
-THUMB_WIDTH = 320
+THUMB_WIDTH = 480  # also what the vision model sees
 
 
 @dataclass(frozen=True)

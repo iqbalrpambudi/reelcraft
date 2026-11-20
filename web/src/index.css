@@ -199,3 +199,28 @@ progress {
 .list li > div {
   min-width: 0;
 }
+
+header nav {
+  margin-left: auto;
+}
+
+.settings {
+  display: grid;
+  gap: 16px;
+  max-width: 640px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+.field label {
+  font-weight: 600;
+}
+
+.scenes li {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}

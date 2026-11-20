@@ -28,11 +28,11 @@ def test_upload_run_and_browse_results(client, sample_video):
 
     queued = client.post(f"{base}/run", json={})
     assert queued.status_code == 202
-    assert [s["status"] for s in queued.json()] == ["queued", "queued"]
+    assert [s["status"] for s in queued.json()] == ["queued"] * 3
     assert client.post(f"{base}/run", json={}).status_code == 400  # already busy
 
     assert worker.run_next()
-    assert [s["status"] for s in client.get(f"{base}/steps").json()] == ["done", "done"]
+    assert [s["status"] for s in client.get(f"{base}/steps").json()] == ["done"] * 3
     [m] = client.get(f"{base}/media").json()
     assert m["status"] == "ready" and m["scene_count"] == 2
     assert not any((project_dir(pid) / UPLOADS).iterdir())  # moved into media/, not copied
@@ -60,7 +60,11 @@ def test_events_stream_starts_with_current_steps(client):
     with client.stream("GET", f"/api/v1/projects/{pid}/events") as r:
         assert r.headers["content-type"].startswith("text/event-stream")
         first = next(r.iter_lines())
-    assert [s["step"] for s in json.loads(first.removeprefix("data: "))] == ["ingest", "analyze"]
+    assert [s["step"] for s in json.loads(first.removeprefix("data: "))] == [
+        "ingest",
+        "analyze",
+        "tag",
+    ]
     assert client.get("/api/v1/projects/nope/events").status_code == 404
 
 

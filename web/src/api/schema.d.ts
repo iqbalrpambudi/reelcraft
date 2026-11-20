@@ -204,6 +204,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Settings */
+        get: operations["list_settings_api_v1_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Settings */
+        patch: operations["update_settings_api_v1_settings_patch"];
+        trace?: never;
+    };
+    "/api/v1/settings/check-ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check Ai */
+        post: operations["check_ai_api_v1_settings_check_ai_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -242,6 +277,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AICheck */
+        AICheck: {
+            /**
+             * Task
+             * @enum {string}
+             */
+            task: "text" | "vision";
+            /** Model */
+            model: string;
+            /** Ok */
+            ok: boolean;
+            /** Message */
+            message: string;
+        };
         /** Body_upload_media_api_v1_projects__project_id__media_upload_post */
         Body_upload_media_api_v1_projects__project_id__media_upload_post: {
             /** File */
@@ -336,6 +385,32 @@ export interface components {
             end: number;
             /** Thumbnail */
             thumbnail: string | null;
+            /** Description */
+            description: string | null;
+            /** Tags */
+            tags: string[] | null;
+            /** Tag Error */
+            tag_error: string | null;
+        };
+        /** SettingOut */
+        SettingOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Help */
+            help: string;
+            /** Secret */
+            secret: boolean;
+            /** Value */
+            value: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "db" | "env" | "default" | "unset";
+            /** Default */
+            default: string | null;
         };
         /** StepRunOut */
         StepRunOut: {
@@ -838,6 +913,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_settings_api_v1_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingOut"][];
+                };
+            };
+        };
+    };
+    update_settings_api_v1_settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_ai_api_v1_settings_check_ai_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AICheck"][];
                 };
             };
         };

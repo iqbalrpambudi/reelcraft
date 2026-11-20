@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from reelcraft.core.errors import NotFound, ReelcraftError
 from reelcraft.pipeline.context import Cancelled, Listener, StepContext
-from reelcraft.pipeline.steps import analyze, ingest
+from reelcraft.pipeline.steps import analyze, ingest, tag
 from reelcraft.storage.db import session_scope, utcnow
 from reelcraft.storage.files import project_dir
 from reelcraft.storage.models import Project, StepRun
@@ -14,6 +14,7 @@ from reelcraft.storage.models import Project, StepRun
 STEPS: dict[str, Callable[[StepContext], None]] = {
     "ingest": ingest.run,
     "analyze": analyze.run,
+    "tag": tag.run,
 }
 
 

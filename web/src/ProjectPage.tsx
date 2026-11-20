@@ -13,6 +13,7 @@ import {
 const STEP_LABEL: Record<string, string> = {
   ingest: 'Ambil media',
   analyze: 'Analisis scene',
+  tag: 'Deskripsi AI',
 }
 const BUSY = ['reserved', 'queued', 'running']
 
@@ -136,6 +137,11 @@ export function ProjectPage() {
                 <span className="small muted">
                   {formatTime(sc.start)}–{formatTime(sc.end)}
                 </span>
+                {sc.description ? (
+                  <span className="small">{sc.description}</span>
+                ) : (
+                  sc.tag_error && <span className="small error">{sc.tag_error}</span>
+                )}
               </li>
             ))}
           </ul>

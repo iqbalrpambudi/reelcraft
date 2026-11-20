@@ -40,6 +40,9 @@ class SceneOut(BaseModel):
     start: float
     end: float
     thumbnail: str | None
+    description: str | None
+    tags: list[str] | None
+    tag_error: str | None
 
 
 def add(session: Session, project_id: str, source: str) -> MediaOut:

@@ -8,8 +8,10 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.1",
+    "cryptography>=50.0.2",
     "fastapi>=0.165.0",
     "opencv-python-headless>=5.1.0.95",
+    "pydantic-ai-slim[google,openai]>=2.71.0",
     "pydantic-settings>=2.16.3",
     "python-multipart>=0.0.34",
     "scenedetect>=0.7.3",
@@ -69,6 +71,7 @@ layers = [
     "reelcraft.api",
     "reelcraft.services",
     "reelcraft.pipeline",
+    "reelcraft.ai",
     "reelcraft.storage | reelcraft.media",
     "reelcraft.core",
 ]
