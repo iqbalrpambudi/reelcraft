@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 from typing import Annotated
 
@@ -6,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from reelcraft.core.errors import NotFound, ReelcraftError
+from reelcraft.storage.files import project_dir
 from reelcraft.storage.models import Project
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -61,6 +63,8 @@ def update(session: Session, project_id: str, data: ProjectUpdate) -> ProjectOut
 
 def delete(session: Session, project_id: str) -> None:
     session.delete(_get(session, project_id))
+    session.flush()  # DB errors surface before any file is touched
+    shutil.rmtree(project_dir(project_id), ignore_errors=True)
 
 
 def resolve_id(session: Session, prefix: str) -> str:

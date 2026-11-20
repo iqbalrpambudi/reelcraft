@@ -1,9 +1,12 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Annotated
 
 import typer
 
 from reelcraft.core.errors import ReelcraftError
+
+ProjectId = Annotated[str, typer.Argument(help="Id project, atau awalannya yang unik.")]
 
 
 @contextmanager

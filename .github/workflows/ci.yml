@@ -22,6 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.4.0  # upstream publishes no floating major tag
+      - name: Install ffmpeg
+        run: command -v ffprobe || (sudo apt-get update && sudo apt-get install -y ffmpeg)
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .

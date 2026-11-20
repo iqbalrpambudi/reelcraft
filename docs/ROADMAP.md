@@ -15,15 +15,16 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Type web di-generate dari OpenAPI; lint cek migrasi & type
 
 ## v0.3 Pipeline engine, Ingest, Analyze
-- [ ] Kontrak step + runner: status per step di DB, jalankan rentang step, step hilir di-reset saat step hulu diulang, cegah run ganda per project, batal kooperatif
-- [ ] CLI `reelcraft run <project> [--from] [--to]` dan `reelcraft status <project>` dengan progress
-- [ ] Media: tambah dari file lokal / URL (CLI) dan upload / URL (web)
-- [ ] Step Ingest: salin file atau unduh via yt-dlp, probe metadata (PyAV)
-- [ ] Step Analyze: deteksi scene (PySceneDetect) + thumbnail per scene
+- [x] Kontrak step + runner: status per step di DB, jalankan rentang step, step hilir di-reset saat step hulu diulang, cegah run ganda per project, batal kooperatif
+- [x] CLI `reelcraft run <project> [--from] [--to]` dan `reelcraft status <project>` dengan progress
+- [x] Media: tambah dari file lokal / URL lewat CLI (`reelcraft media`)
+- [ ] Media dari web: upload file / URL
+- [x] Step Ingest: salin file atau unduh via yt-dlp (sampai 1080p, solver JS bawaan), probe metadata (ffprobe)
+- [x] Step Analyze: deteksi scene (PySceneDetect) + thumbnail per scene
 - [ ] Job queue (Huey, SQLite) untuk run dari web, worker berjalan di dalam `reelcraft serve`
 - [ ] Progress live ke web via SSE; tombol batal
 - [ ] Web: routing, halaman detail project dengan stepper segment, daftar media & scene
-- [ ] `reelcraft doctor`: cek ffmpeg, data dir, versi
+- [x] `reelcraft doctor`: cek ffmpeg, data dir, versi
 
 ## v0.4 Settings & AI
 - [ ] Settings di DB, secret terenkripsi (Fernet, key di data dir)

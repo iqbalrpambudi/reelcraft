@@ -26,7 +26,15 @@ reelcraft project list
 reelcraft project show 6c75          # id boleh awalan yang unik
 reelcraft project rename 6c75 "Nama baru"
 reelcraft project delete 6c75 -y
+
+reelcraft media add 6c75 ~/Videos/klip.mp4 https://youtu.be/...
+reelcraft run 6c75                   # lanjut dari step yang belum selesai
+reelcraft run 6c75 --from analyze    # ulang dari step tertentu (step setelahnya ikut di-reset)
+reelcraft status 6c75
+reelcraft doctor                     # cek ffmpeg, data dir, dashboard
 ```
+
+Pipeline per project: `ingest` (salin/unduh media, baca metadata) → `analyze` (deteksi scene + thumbnail) → step berikutnya menyusul (lihat [docs/ROADMAP.md](docs/ROADMAP.md)).
 
 ## Development
 

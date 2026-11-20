@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
 
-from reelcraft.cli.errors import user_errors
+from reelcraft.cli.common import ProjectId, user_errors
 from reelcraft.core.errors import ReelcraftError
 from reelcraft.services import projects
 from reelcraft.services.projects import ProjectCreate, ProjectOut, ProjectUpdate
@@ -14,8 +14,6 @@ from reelcraft.storage.db import session_scope
 
 app = typer.Typer(help="Kelola project.", no_args_is_help=True)
 console = Console()
-
-ProjectId = Annotated[str, typer.Argument(help="Id project, atau awalannya yang unik.")]
 
 
 def _local(dt: datetime) -> str:
