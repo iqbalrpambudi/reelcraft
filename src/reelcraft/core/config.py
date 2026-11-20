@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"  # local single-user app: never listen on all interfaces by default
     port: int = 8765
 
+    @property
+    def database_url(self) -> str:
+        return f"sqlite:///{self.data_dir / 'reelcraft.db'}"
+
 
 @lru_cache
 def get_settings() -> Settings:

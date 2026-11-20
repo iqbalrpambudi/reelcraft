@@ -16,7 +16,17 @@ make web-build      # build dashboard ke dalam package
 uv run reelcraft serve
 ```
 
-Dashboard terbuka di http://127.0.0.1:8765.
+Dashboard terbuka di http://127.0.0.1:8765. Data disimpan di `~/.reelcraft` (ubah dengan `REELCRAFT_DATA_DIR`).
+
+## CLI
+
+```bash
+reelcraft project new "Jawa di Eropa"
+reelcraft project list
+reelcraft project show 6c75          # id boleh awalan yang unik
+reelcraft project rename 6c75 "Nama baru"
+reelcraft project delete 6c75 -y
+```
 
 ## Development
 
@@ -24,20 +34,24 @@ Dashboard terbuka di http://127.0.0.1:8765.
 make dev-api        # terminal 1: API dengan auto-reload
 make dev-web        # terminal 2: Vite di http://localhost:5173 (proxy /api ke dev-api)
 make test
-make lint
+make lint                   # termasuk cek migrasi vs model dan type web vs API
+make migration m="add scenes"   # setelah mengubah model di storage/models.py
+make api-types              # setelah mengubah endpoint / schema API
 ```
 
 ## Struktur
 
 ```
 src/reelcraft/
-├─ core/     domain & config; tidak boleh import cli/api
-├─ api/      FastAPI (router tipis) + serve web build
-└─ cli.py    Typer
-web/         dashboard React + Vite
-docs/adr/    catatan keputusan arsitektur
+├─ cli/        Typer; satu file per kelompok perintah
+├─ api/        FastAPI, router tipis + serve web build
+├─ services/   use case yang dipakai bersama CLI & API
+├─ storage/    model SQLAlchemy, session, migrasi Alembic
+└─ core/       config & error; tidak import apa pun dari layer lain
+web/           dashboard React + Vite; src/api/schema.d.ts di-generate
+docs/adr/      catatan keputusan arsitektur
 ```
 
-Arah dependensi `cli → api → core` dijaga oleh `lint-imports` di CI.
+Arah dependensi `cli → api → services → storage → core` dijaga oleh `lint-imports`. Skema DB hanya berubah lewat migrasi; aplikasi otomatis migrate saat start.
 
 Lihat [CONTRIBUTING.md](CONTRIBUTING.md) untuk branching, commit, dan rilis.

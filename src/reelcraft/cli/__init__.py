@@ -7,9 +7,11 @@ import uvicorn
 
 from reelcraft import __version__
 from reelcraft.api.app import STATIC_DIR, create_app
+from reelcraft.cli import project
 from reelcraft.core.config import get_settings
 
 app = typer.Typer(help="Reelcraft: a production line for short-form video.", no_args_is_help=True)
+app.add_typer(project.app, name="project")
 
 
 def _print_version(value: bool) -> None:

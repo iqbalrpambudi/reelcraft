@@ -7,8 +7,10 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.20.1",
     "fastapi>=0.165.0",
     "pydantic-settings>=2.16.3",
+    "sqlalchemy>=2.1.9",
     "typer>=0.29.2",
     "uvicorn[standard]>=0.54.0",
 ]
@@ -56,9 +58,15 @@ typeCheckingMode = "standard"
 root_package = "reelcraft"
 
 [[tool.importlinter.contracts]]
-name = "Entry points depend on the domain, never the reverse"
+name = "Each layer imports only the layers below it"
 type = "layers"
-layers = ["reelcraft.cli", "reelcraft.api", "reelcraft.core"]
+layers = [
+    "reelcraft.cli",
+    "reelcraft.api",
+    "reelcraft.services",
+    "reelcraft.storage",
+    "reelcraft.core",
+]
 
 [tool.commitizen]
 name = "cz_conventional_commits"

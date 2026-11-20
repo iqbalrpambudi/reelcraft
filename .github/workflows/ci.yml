@@ -27,6 +27,8 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run basedpyright
       - run: uv run lint-imports
+      - name: Migrations match models
+        run: REELCRAFT_DATA_DIR=$(mktemp -d) sh -c 'uv run alembic upgrade head && uv run alembic check'
       - run: uv run pytest
 
   web:
@@ -41,6 +43,10 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - uses: astral-sh/setup-uv@v10.4.0  # upstream publishes no floating major tag
       - run: npm ci
+      - name: API types match the backend
+        working-directory: .
+        run: make api-types && git diff --exit-code web/src/api/schema.d.ts
       - run: npm run lint
       - run: npm run build
