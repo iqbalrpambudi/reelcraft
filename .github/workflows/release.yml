@@ -32,7 +32,7 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0  # upstream publishes no floating major tag
       - run: cd web && npm ci
       - run: make build
       - run: gh release upload "${{ needs.release-please.outputs.tag_name }}" dist/*
