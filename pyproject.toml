@@ -1,0 +1,64 @@
+[project]
+name = "reelcraft"
+dynamic = ["version"]  # from src/reelcraft/__init__.py, bumped by release-please
+description = "A production line for short-form video, from the CLI or a web dashboard."
+authors = [
+    { name = "iqbalrpambudi", email = "iqbal.pambudi@dataon.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.165.0",
+    "pydantic-settings>=2.16.3",
+    "typer>=0.29.2",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+reelcraft = "reelcraft.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.40.2",
+    "commitizen>=4.19.4",
+    "httpx>=0.28.1",
+    "import-linter>=2.17",
+    "pre-commit>=4.7.0",
+    "pytest>=9.2.0",
+    "ruff>=0.17.6",
+]
+
+[tool.hatch.version]
+path = "src/reelcraft/__init__.py"
+
+[tool.hatch.build]
+# The web build is gitignored but must ship inside the wheel
+artifacts = ["src/reelcraft/api/static/**"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.basedpyright]
+include = ["src"]
+typeCheckingMode = "standard"
+
+[tool.importlinter]
+root_package = "reelcraft"
+
+[[tool.importlinter.contracts]]
+name = "Entry points depend on the domain, never the reverse"
+type = "layers"
+layers = ["reelcraft.cli", "reelcraft.api", "reelcraft.core"]
+
+[tool.commitizen]
+name = "cz_conventional_commits"

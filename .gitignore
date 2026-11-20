@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Web
+node_modules/
+src/reelcraft/api/static/
+
+# Local
+.env
+.DS_Store
