@@ -45,8 +45,8 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Subtitle karaoke ASS (pysubs2) + gaya subtitle (font & warna kata aktif di Settings)
 - [x] Library BGM per mood (`<data dir>/music/<mood>/`, pilih per project) + auto-duck
 - [x] Step Render: 9:16 via ffmpeg, background fill (blur / cover / warna), watermark
-- [ ] Render preview (resolusi kecil, cepat)
-- [ ] Web: pratinjau timeline & ubah urutan klip, pengaturan subtitle
+- [x] Step Preview: render setengah resolusi, cepat, sebelum render final
+- [x] Web: pratinjau timeline & ubah urutan klip, pengaturan subtitle (halaman Settings)
 
 ## v0.7 Dashboard
 - [ ] Workflow segment lengkap: buka tiap segment, lihat & edit artifact, "jalankan ulang dari sini"

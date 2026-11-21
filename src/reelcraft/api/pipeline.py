@@ -10,10 +10,11 @@ from sqlalchemy.orm import Session
 
 from reelcraft.api.deps import get_session
 from reelcraft.pipeline import runner
-from reelcraft.services import media, pipeline, scripts
+from reelcraft.services import media, pipeline, scripts, timeline
 from reelcraft.services.media import MediaOut, SceneOut
 from reelcraft.services.pipeline import StepRunOut
 from reelcraft.services.scripts import ScriptText
+from reelcraft.services.timeline import Timeline
 from reelcraft.storage.db import session_scope
 from reelcraft.storage.files import project_file
 
@@ -29,6 +30,10 @@ class MediaIn(BaseModel):
 
 class ScriptIn(BaseModel):
     text: str
+
+
+class OrderIn(BaseModel):
+    order: list[int]  # clip indexes in their new order
 
 
 class RunIn(BaseModel):
@@ -69,6 +74,16 @@ def get_script(project_id: str, db: Db) -> ScriptText:
 @router.put("/script")
 def save_script(project_id: str, data: ScriptIn, db: Db) -> ScriptText:
     return scripts.save(db, project_id, data.text)
+
+
+@router.get("/timeline")
+def get_timeline(project_id: str, db: Db) -> Timeline | None:
+    return timeline.get(db, project_id)
+
+
+@router.put("/timeline")
+def reorder_timeline(project_id: str, data: OrderIn, db: Db) -> Timeline:
+    return timeline.reorder(db, project_id, data.order)
 
 
 @router.get("/steps")

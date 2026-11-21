@@ -9,8 +9,16 @@ from reelcraft.media.tools import require
 FPS = 30
 MUSIC_VOLUME = 0.35  # under the voice even before ducking
 FADE = 1.5  # seconds the music fades out at the end
-COVER = f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT}"
-CONTAIN = f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=decrease:force_divisible_by=2"
+PREVIEW = 2  # a preview is this many times smaller each way, and encoded for speed
+
+
+def _size(preview: bool) -> tuple[int, int]:
+    return (WIDTH // PREVIEW, HEIGHT // PREVIEW) if preview else (WIDTH, HEIGHT)
+
+
+def _encode(preview: bool, preset: str, crf: int) -> tuple[str, ...]:
+    preset, crf = ("ultrafast", 28) if preview else (preset, crf)
+    return ("-c:v", "libx264", "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p")
 
 
 def check_background(background: str) -> None:
@@ -20,27 +28,39 @@ def check_background(background: str) -> None:
         )
 
 
-def clip(src: Path, dest: Path, start: float, length: float, slot: float, background: str) -> None:
+def clip(
+    src: Path,
+    dest: Path,
+    start: float,
+    length: float,
+    slot: float,
+    background: str,
+    preview: bool = False,
+) -> None:
     """`length` s of `src` from `start`, sped up or slowed to fill `slot` s, as a 9:16 frame:
     blur (the clip over a blurred copy of itself), cover (cropped to fill), or a #RRGGBB colour."""
+    w, h = _size(preview)
+    cover = f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h}"
+    contain = f"scale={w}:{h}:force_original_aspect_ratio=decrease:force_divisible_by=2"
     fit = f"trim=duration={length:.4f},setpts={slot / length:.5f}*(PTS-STARTPTS)"
     # A source ending early would leave the slot short and the voice drifting: hold the last frame
     tail = f"setsar=1,fps={FPS},tpad=stop_mode=clone:stop_duration={slot:.3f}"
     if background == "blur":
         graph = (
             f"[0:v]{fit},split[a][b];"
-            f"[a]{COVER},boxblur=28:6,eq=brightness=-0.08:saturation=0.85[bg];"
-            f"[b]{CONTAIN}[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,{tail}[v]"
+            f"[a]{cover},boxblur={28 // (PREVIEW if preview else 1)}:6,"
+            "eq=brightness=-0.08:saturation=0.85[bg];"
+            f"[b]{contain}[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,{tail}[v]"
         )
     elif background == "cover":
-        graph = f"[0:v]{fit},{COVER},{tail}[v]"
+        graph = f"[0:v]{fit},{cover},{tail}[v]"
     else:
-        pad = f"pad={WIDTH}:{HEIGHT}:(ow-iw)/2:(oh-ih)/2:color={background}"
-        graph = f"[0:v]{fit},{CONTAIN},{pad},{tail}[v]"
+        pad = f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color={background}"
+        graph = f"[0:v]{fit},{contain},{pad},{tail}[v]"
     _ffmpeg(
         *("-ss", f"{start:.4f}", "-t", f"{length + 0.3:.4f}", "-i", str(src)),
         *("-filter_complex", graph, "-map", "[v]", "-t", f"{slot:.4f}", "-an"),
-        *("-c:v", "libx264", "-preset", "ultrafast", "-crf", "18", "-pix_fmt", "yuv420p"),
+        *_encode(preview, "ultrafast", 18),  # re-encoded once more at the end
         str(dest),
     )
 
@@ -52,7 +72,13 @@ def concat(chunks: list[Path], dest: Path) -> None:
 
 
 def finish(
-    work: Path, voice: Path, music: Path | None, watermark: str | None, duration: float, dest: Path
+    work: Path,
+    voice: Path,
+    music: Path | None,
+    watermark: str | None,
+    duration: float,
+    dest: Path,
+    preview: bool = False,
 ) -> None:
     """work/video.mp4 + voice (+ music ducked under it) + work/subs.ass (+ watermark) -> dest.
 
@@ -61,8 +87,8 @@ def finish(
     if watermark:
         (work / "watermark.txt").write_text(watermark)
         video += (
-            ",drawtext=textfile=watermark.txt:expansion=none:fontsize=40:fontcolor=white@0.85"
-            ":borderw=2:bordercolor=black@0.5:x=w-tw-40:y=80"
+            ",drawtext=textfile=watermark.txt:expansion=none:fontcolor=white@0.85"
+            ":bordercolor=black@0.5:fontsize=h/48:borderw=2:x=w-tw-w/27:y=h/24"
         )
     inputs = ["-i", "video.mp4", "-i", str(voice.resolve())]
     audio = "[1:a]anull[a]"
@@ -80,7 +106,7 @@ def finish(
         *inputs,
         *("-filter_complex", f"{video}[v];{audio}", "-map", "[v]", "-map", "[a]"),
         *("-t", f"{duration:.3f}"),
-        *("-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p"),
+        *_encode(preview, "veryfast", 20),
         *("-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(dest.resolve())),
         cwd=work,
     )

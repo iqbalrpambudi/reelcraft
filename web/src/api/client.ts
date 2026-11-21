@@ -11,6 +11,7 @@ export type Scene = Schemas['SceneOut']
 export type StepRun = Schemas['StepRunOut']
 export type SettingItem = Schemas['SettingOut']
 export type AICheck = Schemas['AICheck']
+export type Timeline = Schemas['Timeline']
 
 /** URL of a file inside a project's data dir (thumbnails, media, renders). */
 export const fileUrl = (projectId: string, path: string) =>

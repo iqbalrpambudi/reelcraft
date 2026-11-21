@@ -26,9 +26,7 @@ def save(session: Session, project_id: str, text: str) -> ScriptText:
     parsed = script.parse(text)
     if not parsed.segments:
         raise ReelcraftError("Naskah kosong. Tulis minimal satu paragraf narasi.")
-    runs = runner.ensure_runs(session, project_id)
-    if any(r.status in runner.BUSY for r in runs):
-        raise ReelcraftError("Project ini sedang diproses. Tunggu atau batalkan dulu.")
+    runs = runner.ensure_idle(session, project_id)
     script.save(project_id, parsed)
     runner.invalidate(session, project_id, "voice")
     for r in runs:

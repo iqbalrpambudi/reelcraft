@@ -18,6 +18,7 @@ STEPS: dict[str, Callable[[StepContext], None]] = {
     "script": script.run,
     "voice": voice.run,
     "edit": edit.run,
+    "preview": render.preview,
     "render": render.run,
 }
 
@@ -61,6 +62,14 @@ def plan(session: Session, project_id: str, start: str | None, end: str | None) 
 
 
 BUSY = ("reserved", "queued", "running")
+
+
+def ensure_idle(session: Session, project_id: str) -> list[StepRun]:
+    """The project's runs, or an error if any is waiting or running: its files are in use."""
+    runs = ensure_runs(session, project_id)
+    if any(r.status in BUSY for r in runs):
+        raise ReelcraftError("Project ini sedang diproses. Tunggu atau batalkan dulu.")
+    return runs
 
 
 def claim(project_id: str, start: str | None, end: str | None, queue: bool = False) -> list[str]:

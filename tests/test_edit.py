@@ -1,6 +1,10 @@
 import itertools
 import json
+from dataclasses import asdict
 
+from fastapi.testclient import TestClient
+
+from reelcraft.api.app import create_app
 from reelcraft.pipeline import matching, runner
 from reelcraft.pipeline.matching import MAX_SHOT, MIN_SHOT, Shot
 from reelcraft.pipeline.steps import edit
@@ -63,3 +67,34 @@ def test_when_only_earlier_footage_is_left_the_last_clip_plays_on():
     starts = [c.source_start for c in clips]
     assert starts == sorted(starts)  # never back in the story
     assert clips[-1].end == 21.0
+
+
+def test_reorder_swaps_footage_but_keeps_slots(sample_video):
+    with session_scope() as s:
+        pid = projects.create(s, ProjectCreate(name="p")).id
+        mid = media.add(s, pid, str(sample_video)).id
+    assert runner.run(pid, end="ingest") == "done"
+    client = TestClient(create_app())
+    base = f"/api/v1/projects/{pid}/timeline"
+    assert client.get(base).json() is None
+    assert client.put(base, json={"order": [0]}).status_code == 400  # no timeline yet
+
+    slots = [(0.0, 3.0, "satu", "a", 0.5), (3.0, 4.5, "dua", "b", 2.0)]
+    clips = [
+        matching.Clip(sc, mid, src, src + 1.0, start, end, text, i)
+        for i, (start, end, text, sc, src) in enumerate(slots)
+    ]
+    (project_dir(pid) / edit.TIMELINE).write_text(
+        json.dumps({"duration": 4.5, "clips": [asdict(c) for c in clips]})
+    )
+    assert client.put(base, json={"order": [0, 0]}).status_code == 400
+    out = client.put(base, json={"order": [1, 0]}).json()["clips"]
+    assert [(c["scene_id"], c["start"], c["text"]) for c in out] == [
+        ("b", 0.0, "satu"),
+        ("a", 3.0, "dua"),
+    ]
+    assert out[0]["source_end"] == 4.0  # 2.0 + a 3 s slot, cut at the end of the 4 s video
+    assert out[1]["source_end"] == 2.0  # 0.5 + 1.5
+    with session_scope() as s:
+        statuses = {r.step: r.status for r in runner.ensure_runs(s, pid)}
+    assert (statuses["preview"], statuses["render"]) == ("pending", "pending")

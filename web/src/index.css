@@ -245,3 +245,13 @@ video.result {
   border-radius: 12px;
   background: black;
 }
+
+.timeline-clip img {
+  width: 96px;
+  border-radius: 6px;
+  flex: none;
+}
+
+.timeline-clip > div:first-of-type {
+  flex: 1;
+}

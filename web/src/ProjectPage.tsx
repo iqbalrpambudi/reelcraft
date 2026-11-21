@@ -8,6 +8,7 @@ import {
   type Project,
   type Scene,
   type StepRun,
+  type Timeline,
 } from './api/client'
 
 const STEP_LABEL: Record<string, string> = {
@@ -17,6 +18,7 @@ const STEP_LABEL: Record<string, string> = {
   script: 'Naskah',
   voice: 'Suara',
   edit: 'Susun klip',
+  preview: 'Pratinjau',
   render: 'Render',
 }
 const BUSY = ['reserved', 'queued', 'running']
@@ -68,14 +70,21 @@ export function ProjectPage() {
 
   const path = { project_id: id }
   const busy = steps.some((s) => BUSY.includes(s.status))
-  const renderRun = steps.find((s) => s.step === 'render')
-  const rendered =
-    renderRun?.status === 'done' ? `${fileUrl(id, 'render.mp4')}?v=${renderRun.finished_at}` : ''
+  // The full render once there is one, else the quick preview
+  const result = ['render', 'preview']
+    .map((step) => steps.find((s) => s.step === step && s.status === 'done'))
+    .find(Boolean)
+  const resultUrl = result && `${fileUrl(id, `${result.step}.mp4`)}?v=${result.finished_at}`
+  // Preview runs whatever is left up to it; if that's nothing, it runs again on its own
+  const names = steps.map((s) => s.step)
+  const pending = steps.find((s) => s.status !== 'done')?.step
+  const previewFrom =
+    pending && names.indexOf(pending) <= names.indexOf('preview') ? pending : 'preview'
 
-  const run = async (start?: string) => {
+  const run = async (start?: string, end?: string) => {
     const { error } = await api.POST('/api/v1/projects/{project_id}/run', {
       params: { path },
-      body: { start: start ?? null },
+      body: { start: start ?? null, end: end ?? null },
     })
     setError(error ? errorMessage(error) : '')
   }
@@ -97,9 +106,14 @@ export function ProjectPage() {
               Batalkan
             </button>
           ) : (
-            <button type="button" onClick={() => run()}>
-              Jalankan
-            </button>
+            <div className="row">
+              <button type="button" className="quiet" onClick={() => run(previewFrom, 'preview')}>
+                Pratinjau
+              </button>
+              <button type="button" onClick={() => run()}>
+                Jalankan
+              </button>
+            </div>
           )}
         </div>
         {error && (
@@ -128,15 +142,19 @@ export function ProjectPage() {
         </ol>
       </section>
 
-      {rendered && (
+      {result && resultUrl && (
         <section aria-labelledby="result-title">
           <div className="row">
-            <h2 id="result-title">Hasil</h2>
-            <a href={rendered} download={`${project.name}.mp4`}>
-              Unduh
-            </a>
+            <h2 id="result-title">
+              {result.step === 'render' ? 'Hasil' : 'Pratinjau (setengah resolusi)'}
+            </h2>
+            {result.step === 'render' && (
+              <a href={resultUrl} download={`${project.name}.mp4`}>
+                Unduh
+              </a>
+            )}
           </div>
-          <video controls className="result" src={rendered} aria-label="Video hasil render" />
+          <video controls className="result" src={resultUrl} aria-label="Video hasil" />
         </section>
       )}
 
@@ -148,6 +166,14 @@ export function ProjectPage() {
         voice={steps.find((s) => s.step === 'voice')}
         reloads={reloads}
         disabled={busy}
+      />
+
+      <TimelinePanel
+        projectId={id}
+        scenes={scenes}
+        reloads={reloads}
+        disabled={busy}
+        onSaved={reload}
       />
 
       <section aria-labelledby="scenes-title">
@@ -450,6 +476,108 @@ function ScriptPanel({
           aria-label="Narasi"
         />
       )}
+    </section>
+  )
+}
+
+function TimelinePanel({
+  projectId,
+  scenes,
+  reloads,
+  disabled,
+  onSaved,
+}: {
+  projectId: string
+  scenes: Scene[]
+  reloads: number
+  disabled: boolean
+  onSaved: () => void
+}) {
+  const [timeline, setTimeline] = useState<Timeline | null>(null)
+  const [order, setOrder] = useState<number[]>([])
+  const [status, setStatus] = useState('')
+
+  useEffect(() => {
+    const path = { project_id: projectId }
+    api.GET('/api/v1/projects/{project_id}/timeline', { params: { path } }).then(({ data }) => {
+      setTimeline(data ?? null)
+      setOrder(data ? data.clips.map((_, i) => i) : [])
+    })
+  }, [projectId, reloads])
+
+  if (!timeline || timeline.clips.length === 0) return null
+  const thumbs = Object.fromEntries(scenes.map((sc) => [sc.id, sc.thumbnail]))
+  const changed = order.some((clip, i) => clip !== i)
+
+  const move = (i: number, by: number) => {
+    const next = [...order]
+    ;[next[i], next[i + by]] = [next[i + by], next[i]]
+    setOrder(next)
+  }
+
+  const save = async () => {
+    const { data, error } = await api.PUT('/api/v1/projects/{project_id}/timeline', {
+      params: { path: { project_id: projectId } },
+      body: { order },
+    })
+    if (data) {
+      setTimeline(data)
+      setOrder(data.clips.map((_, i) => i))
+      onSaved()
+    }
+    setStatus(error ? errorMessage(error) : 'Urutan disimpan. Jalankan pratinjau untuk melihat.')
+  }
+
+  return (
+    <section aria-labelledby="timeline-title">
+      <div className="row">
+        <h2 id="timeline-title">Timeline ({timeline.clips.length} klip)</h2>
+        <button type="button" onClick={save} disabled={disabled || !changed}>
+          Simpan urutan
+        </button>
+      </div>
+      <p className="muted small">
+        Narasi tetap di tempatnya; tombol naik/turun menukar footage yang tampil.
+      </p>
+      {status && <p role="status">{status}</p>}
+      <ol className="list">
+        {order.map((clipIndex, i) => {
+          const slot = timeline.clips[i]
+          const footage = timeline.clips[clipIndex]
+          const thumb = thumbs[footage.scene_id]
+          return (
+            <li key={clipIndex} className="row timeline-clip">
+              {thumb ? <img src={fileUrl(projectId, thumb)} alt="" /> : <span />}
+              <div>
+                <div className="small muted">
+                  {formatTime(slot.start)}–{formatTime(slot.end)}
+                </div>
+                <div className="small">{slot.text}</div>
+              </div>
+              <div className="row">
+                <button
+                  type="button"
+                  className="quiet small"
+                  onClick={() => move(i, -1)}
+                  disabled={disabled || i === 0}
+                  aria-label={`Naikkan klip ${i + 1}`}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  className="quiet small"
+                  onClick={() => move(i, 1)}
+                  disabled={disabled || i === order.length - 1}
+                  aria-label={`Turunkan klip ${i + 1}`}
+                >
+                  ↓
+                </button>
+              </div>
+            </li>
+          )
+        })}
+      </ol>
     </section>
   )
 }

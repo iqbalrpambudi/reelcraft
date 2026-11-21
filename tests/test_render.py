@@ -7,7 +7,7 @@ from reelcraft.core.errors import ReelcraftError
 from reelcraft.media import render, subtitles
 from reelcraft.media.probe import probe
 from reelcraft.pipeline import runner
-from reelcraft.pipeline.steps.render import OUTPUT, WORK
+from reelcraft.pipeline.steps.render import OUTPUT, PREVIEW
 from reelcraft.services import media, projects
 from reelcraft.services.projects import ProjectCreate, ProjectUpdate
 from reelcraft.storage import music, settings
@@ -53,7 +53,8 @@ def test_pipeline_renders_a_vertical_video_with_the_narration(sample_video, back
     info = probe(project_dir(pid) / OUTPUT)
     assert (info.width, info.height) == (1080, 1920)
     assert info.duration == pytest.approx(1.0, abs=0.1)  # the narration, not the 4 s source
-    assert not (project_dir(pid) / WORK).exists()
+    assert probe(project_dir(pid) / PREVIEW).width == 540
+    assert sorted(p.name for p in project_dir(pid).iterdir() if p.suffix == ".work") == []
 
 
 def _track(mood: str, seconds: float = 0.4) -> None:
