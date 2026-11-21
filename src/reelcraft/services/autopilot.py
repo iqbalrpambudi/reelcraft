@@ -29,7 +29,7 @@ CLIPS = 3  # footage per video
 SLOT_LEAD = timedelta(minutes=15)  # time to upload before a slot
 SLOT_DAYS = 3  # how far ahead slots are filled
 RETRY_AFTER = 600.0  # seconds between failed production attempts, not to burn AI quota
-_last_attempt = 0.0
+_last_attempt: float | None = None  # monotonic time; it starts near 0 right after boot
 
 
 @dataclass
@@ -212,6 +212,6 @@ def tick(now: datetime | None = None) -> None:
             return
         schedule(s, cfg, now)
         due = _due(s, cfg, now)
-    if due and time.monotonic() - _last_attempt >= RETRY_AFTER:
+    if due and (_last_attempt is None or time.monotonic() - _last_attempt >= RETRY_AFTER):
         _last_attempt = time.monotonic()
         produce(cfg.niche)

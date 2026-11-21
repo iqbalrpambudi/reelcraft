@@ -49,13 +49,14 @@ def ai_and_search(monkeypatch):
     monkeypatch.setattr(
         discovery, "search", lambda *a, **k: DiscoverOut(results=results, errors={})
     )
-    monkeypatch.setattr(autopilot, "_last_attempt", 0.0)
+    monkeypatch.setattr(autopilot, "_last_attempt", None)
     with session_scope() as s:
         settings.put(s, "autopilot", "on")
     return seen
 
 
 def test_production_runs_once_per_window_and_stops_at_a_full_pool(ai_and_search, monkeypatch):
+    monkeypatch.setattr(autopilot.time, "monotonic", lambda: 5.0)  # as on a machine just booted
     autopilot.tick(NOON.replace(hour=11))  # before the first production time
     with session_scope() as s:
         assert s.query(Project).count() == 0
@@ -68,14 +69,14 @@ def test_production_runs_once_per_window_and_stops_at_a_full_pool(ai_and_search,
         assert sources[0] == "https://px/1" and len(sources) == autopilot.CLIPS  # free first
         assert s.get(StepRun, (project.id, "ingest")).status == "queued"
 
-    monkeypatch.setattr(autopilot, "_last_attempt", 0.0)
+    monkeypatch.setattr(autopilot.time, "monotonic", lambda: 10_000.0)
     autopilot.tick(NOON + timedelta(hours=1))  # same window: already made
     autopilot.tick(NOON.replace(hour=18, minute=5))
     with session_scope() as s:
         assert s.query(Project).count() == 2
         settings.put(s, "autopilot_pool", "2")
     assert ai_and_search["recent"] == ["Ide 1"]
-    monkeypatch.setattr(autopilot, "_last_attempt", 0.0)
+    monkeypatch.setattr(autopilot, "_last_attempt", None)
     autopilot.tick(NOON + timedelta(days=1))
     with session_scope() as s:
         assert s.query(Project).count() == 2  # pool of 2 is full
