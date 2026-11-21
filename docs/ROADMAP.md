@@ -32,15 +32,14 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Vision tagging scene (step `tag` setelah Analyze), retry 5xx dengan backoff, run ulang hanya untuk scene yang gagal
 - [x] Halaman Settings di web, `reelcraft config` di CLI
 
-## v0.5 Script & Voice
+## v0.5 Script & Voice ✅
 - [x] Template narasi (preset + instruksi kustom per project, `reelcraft project brief`)
 - [x] Step Script: naskah terstruktur dari LLM berdasarkan topik + scene (`script.md`)
 - [x] Edit naskah di web dan CLI (`reelcraft script`, `$EDITOR`)
 - [x] Adapter TTS: Gemini
-- [ ] Adapter TTS: ElevenLabs
 - [x] Step Voice: audio narasi + timestamp per kata (faster-whisper, diselaraskan ke teks naskah)
 
-## v0.6 Edit & Render
+## v0.6 Edit & Render ✅
 - [x] Step Edit: auto-match scene ke segmen narasi (port inti `matching.py`: jendela shot, skor kata + durasi + urutan, heal; tanpa embedding/heatmap)
 - [x] Subtitle karaoke ASS (pysubs2) + gaya subtitle (font & warna kata aktif di Settings)
 - [x] Library BGM per mood (`<data dir>/music/<mood>/`, pilih per project) + auto-duck
@@ -49,8 +48,8 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Web: pratinjau timeline & ubah urutan klip, pengaturan subtitle (halaman Settings)
 
 ## v0.7 Dashboard
-- [ ] Workflow segment lengkap: buka tiap segment, lihat & edit artifact, "jalankan ulang dari sini"
-- [ ] Player video/audio untuk hasil tiap step
+- [x] Workflow segment lengkap: buka tiap segment, lihat & edit artifact, "jalankan ulang dari sini"
+- [x] Player video/audio untuk hasil tiap step
 - [ ] Indikator antrean global dan riwayat job
 
 ## v0.8 Discovery
@@ -73,4 +72,5 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [ ] Rilis pertama: push `main`, merge PR rilis
 
 ## Setelah 1.0 (ide)
+- Adapter TTS ElevenLabs (sementara cukup Gemini)
 - Generator video perbandingan peta (ukuran asli negara/pulau) sebagai alternatif step Ingest

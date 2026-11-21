@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 import {
   api,
   errorMessage,
@@ -21,6 +21,15 @@ const STEP_LABEL: Record<string, string> = {
   preview: 'Pratinjau',
   render: 'Render',
 }
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'belum',
+  reserved: 'disiapkan',
+  queued: 'antre',
+  running: 'berjalan',
+  done: 'selesai',
+  failed: 'gagal',
+  cancelled: 'dibatalkan',
+}
 const BUSY = ['reserved', 'queued', 'running']
 
 const formatTime = (sec: number) =>
@@ -28,6 +37,7 @@ const formatTime = (sec: number) =>
 
 export function ProjectPage() {
   const { id = '' } = useParams()
+  const [params, setParams] = useSearchParams()
   const [project, setProject] = useState<Project | null>()
   const [steps, setSteps] = useState<StepRun[]>([])
   const [media, setMedia] = useState<Media[]>([])
@@ -70,16 +80,15 @@ export function ProjectPage() {
 
   const path = { project_id: id }
   const busy = steps.some((s) => BUSY.includes(s.status))
-  // The full render once there is one, else the quick preview
-  const result = ['render', 'preview']
-    .map((step) => steps.find((s) => s.step === step && s.status === 'done'))
-    .find(Boolean)
-  const resultUrl = result && `${fileUrl(id, `${result.step}.mp4`)}?v=${result.finished_at}`
   // Preview runs whatever is left up to it; if that's nothing, it runs again on its own
   const names = steps.map((s) => s.step)
   const pending = steps.find((s) => s.status !== 'done')?.step
   const previewFrom =
     pending && names.indexOf(pending) <= names.indexOf('preview') ? pending : 'preview'
+  // The open segment: chosen in the URL, else what is happening now, else what is next
+  const active = steps.find((s) => BUSY.includes(s.status))?.step
+  const open = params.get('step') ?? active ?? pending ?? names[names.length - 1]
+  const current = steps.find((s) => s.step === open)
 
   const run = async (start?: string, end?: string) => {
     const { error } = await api.POST('/api/v1/projects/{project_id}/run', {
@@ -96,110 +105,187 @@ export function ProjectPage() {
 
   return (
     <>
-      <h1>{project.name}</h1>
-
-      <section aria-labelledby="pipeline-title">
-        <div className="row">
-          <h2 id="pipeline-title">Pipeline</h2>
-          {busy ? (
-            <button type="button" className="quiet" onClick={cancel}>
-              Batalkan
+      <div className="row">
+        <h1>{project.name}</h1>
+        {busy ? (
+          <button type="button" className="quiet" onClick={cancel}>
+            Batalkan
+          </button>
+        ) : (
+          <div className="row">
+            <button type="button" className="quiet" onClick={() => run(previewFrom, 'preview')}>
+              Pratinjau
             </button>
-          ) : (
-            <div className="row">
-              <button type="button" className="quiet" onClick={() => run(previewFrom, 'preview')}>
-                Pratinjau
-              </button>
-              <button type="button" onClick={() => run()}>
-                Jalankan
-              </button>
-            </div>
-          )}
-        </div>
-        {error && (
-          <p role="alert" className="error">
-            {error}
-          </p>
+            <button type="button" onClick={() => run()}>
+              Jalankan
+            </button>
+          </div>
         )}
+      </div>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+
+      <nav aria-label="Segment pipeline">
         <ol className="steps">
-          {steps.map((s) => (
-            <li key={s.step} className={`step step-${s.status}`}>
-              <div className="row">
-                <strong>{STEP_LABEL[s.step] ?? s.step}</strong>
-                <span className="badge">{s.status}</span>
-              </div>
-              {s.status === 'running' && (
-                <progress max={100} value={s.progress} aria-label={`Progress ${s.step}`} />
-              )}
-              <div className="muted small">{s.error ?? s.message ?? ''}</div>
-              {!busy && (
-                <button type="button" className="quiet small" onClick={() => run(s.step)}>
-                  Ulang dari sini
-                </button>
-              )}
+          {steps.map((s, i) => (
+            <li key={s.step}>
+              <button
+                type="button"
+                className={`step step-${s.status}`}
+                aria-current={s.step === open ? 'step' : undefined}
+                onClick={() => setParams({ step: s.step }, { replace: true })}
+              >
+                <strong>
+                  {i + 1}. {STEP_LABEL[s.step] ?? s.step}
+                </strong>
+                <span className="badge">{STATUS_LABEL[s.status] ?? s.status}</span>
+                {s.status === 'running' && (
+                  <progress max={100} value={s.progress} aria-label={`Progress ${s.step}`} />
+                )}
+              </button>
             </li>
           ))}
         </ol>
-      </section>
+      </nav>
 
-      {result && resultUrl && (
-        <section aria-labelledby="result-title">
+      {current && (
+        <section aria-labelledby="segment-title" className="segment">
           <div className="row">
-            <h2 id="result-title">
-              {result.step === 'render' ? 'Hasil' : 'Pratinjau (setengah resolusi)'}
-            </h2>
-            {result.step === 'render' && (
-              <a href={resultUrl} download={`${project.name}.mp4`}>
-                Unduh
-              </a>
+            <h2 id="segment-title">{STEP_LABEL[current.step] ?? current.step}</h2>
+            {!busy && (
+              <button type="button" className="quiet small" onClick={() => run(current.step)}>
+                Jalankan ulang dari sini
+              </button>
             )}
           </div>
-          <video controls className="result" src={resultUrl} aria-label="Video hasil" />
+          {(current.error || current.message) && (
+            <p className={current.error ? 'error' : 'muted small'}>
+              {current.error ?? current.message}
+            </p>
+          )}
+          {current.step === 'ingest' && (
+            <MediaPanel projectId={id} media={media} disabled={busy} onChange={reload} />
+          )}
+          {current.step === 'analyze' && <SceneGrid projectId={id} scenes={scenes} />}
+          {current.step === 'tag' && <SceneGrid projectId={id} scenes={scenes} described />}
+          {current.step === 'script' && (
+            <ScriptPanel
+              project={project}
+              onProject={setProject}
+              reloads={reloads}
+              disabled={busy}
+            />
+          )}
+          {current.step === 'voice' && <VoicePanel projectId={id} run={current} />}
+          {current.step === 'edit' && (
+            <TimelinePanel
+              projectId={id}
+              scenes={scenes}
+              reloads={reloads}
+              disabled={busy}
+              onSaved={reload}
+            />
+          )}
+          {(current.step === 'preview' || current.step === 'render') && (
+            <VideoResult projectId={id} run={current} name={project.name} />
+          )}
         </section>
       )}
+    </>
+  )
+}
 
-      <MediaPanel projectId={id} media={media} disabled={busy} onChange={reload} />
-
-      <ScriptPanel
-        project={project}
-        onProject={setProject}
-        voice={steps.find((s) => s.step === 'voice')}
-        reloads={reloads}
-        disabled={busy}
-      />
-
-      <TimelinePanel
-        projectId={id}
-        scenes={scenes}
-        reloads={reloads}
-        disabled={busy}
-        onSaved={reload}
-      />
-
-      <section aria-labelledby="scenes-title">
-        <h2 id="scenes-title">Scene ({scenes.length})</h2>
-        {scenes.length === 0 ? (
-          <p className="muted">Scene muncul setelah step analisis selesai.</p>
-        ) : (
-          <ul className="scenes">
-            {scenes.map((sc) => (
-              <li key={sc.id}>
-                {sc.thumbnail && (
-                  <img src={fileUrl(id, sc.thumbnail)} alt="" loading="lazy" />
-                )}
-                <span className="small muted">
-                  {formatTime(sc.start)}–{formatTime(sc.end)}
-                </span>
-                {sc.description ? (
-                  <span className="small">{sc.description}</span>
-                ) : (
-                  sc.tag_error && <span className="small error">{sc.tag_error}</span>
-                )}
-              </li>
+function SceneGrid({
+  projectId,
+  scenes,
+  described = false,
+}: {
+  projectId: string
+  scenes: Scene[]
+  described?: boolean
+}) {
+  if (scenes.length === 0) return <p className="muted">Scene muncul setelah analisis selesai.</p>
+  return (
+    <ul className="scenes" aria-label={`${scenes.length} scene`}>
+      {scenes.map((sc) => (
+        <li key={sc.id}>
+          {sc.thumbnail && <img src={fileUrl(projectId, sc.thumbnail)} alt="" loading="lazy" />}
+          <span className="small muted">
+            {formatTime(sc.start)}–{formatTime(sc.end)}
+          </span>
+          {described &&
+            (sc.description ? (
+              <>
+                <span className="small">{sc.description}</span>
+                <span className="small muted">{sc.tags?.join(', ')}</span>
+              </>
+            ) : (
+              <span className="small error">{sc.tag_error ?? 'Belum dideskripsi'}</span>
             ))}
-          </ul>
-        )}
-      </section>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+type VoiceSegment = { text: string; start: number; end: number }
+
+function VoicePanel({ projectId, run }: { projectId: string; run: StepRun }) {
+  const [segments, setSegments] = useState<VoiceSegment[]>([])
+  const audio = useRef<HTMLAudioElement>(null)
+  const version = run.status === 'done' ? run.finished_at : null
+
+  useEffect(() => {
+    if (!version) return
+    fetch(`${fileUrl(projectId, 'voice.json')}?v=${version}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setSegments(data?.segments ?? []))
+  }, [projectId, version])
+
+  if (!version) return <p className="muted">Narasi muncul setelah step ini selesai.</p>
+  const seek = (t: number) => {
+    if (!audio.current) return
+    audio.current.currentTime = t
+    void audio.current.play()
+  }
+  return (
+    <>
+      <audio
+        ref={audio}
+        controls
+        src={`${fileUrl(projectId, 'voice.wav')}?v=${version}`}
+        aria-label="Narasi"
+      />
+      <ol className="list">
+        {segments.map((seg, i) => (
+          <li key={i}>
+            <button type="button" className="quiet small" onClick={() => seek(seg.start)}>
+              {formatTime(seg.start)}
+            </button>{' '}
+            {seg.text}
+          </li>
+        ))}
+      </ol>
+    </>
+  )
+}
+
+function VideoResult({ projectId, run, name }: { projectId: string; run: StepRun; name: string }) {
+  if (run.status !== 'done') return <p className="muted">Video muncul setelah step ini selesai.</p>
+  const url = `${fileUrl(projectId, `${run.step}.mp4`)}?v=${run.finished_at}`
+  return (
+    <>
+      <video controls className="result" src={url} aria-label={`Video ${run.step}`} />
+      {run.step === 'render' && (
+        <p>
+          <a href={url} download={`${name}.mp4`}>
+            Unduh video
+          </a>
+        </p>
+      )}
     </>
   )
 }
@@ -260,7 +346,7 @@ function MediaPanel({
 
   return (
     <section aria-labelledby="media-title">
-      <h2 id="media-title">Media</h2>
+      <h3 id="media-title">Media</h3>
       <form onSubmit={addSource} className="row">
         <label htmlFor="media-source" className="sr-only">
           URL atau path file
@@ -304,6 +390,18 @@ function MediaPanel({
                 {` · ${m.scene_count} scene`}
                 {m.error ? ` · ${m.error}` : ''}
               </div>
+              {m.file && (
+                <details>
+                  <summary className="small">Putar</summary>
+                  <video
+                    controls
+                    preload="none"
+                    className="result"
+                    src={fileUrl(projectId, m.file)}
+                    aria-label={`Media ${m.source}`}
+                  />
+                </details>
+              )}
             </div>
             <button
               type="button"
@@ -323,13 +421,11 @@ function MediaPanel({
 function ScriptPanel({
   project,
   onProject,
-  voice,
   reloads,
   disabled,
 }: {
   project: Project
   onProject: (p: Project) => void
-  voice?: StepRun
   reloads: number
   disabled: boolean
 }) {
@@ -389,7 +485,7 @@ function ScriptPanel({
 
   return (
     <section aria-labelledby="script-title">
-      <h2 id="script-title">Naskah & suara</h2>
+      <h3 id="script-title">Bahan naskah</h3>
       <form onSubmit={saveBrief} className="settings">
         <div className="field">
           <label htmlFor="brief-topic">Topik</label>
@@ -469,13 +565,6 @@ function ScriptPanel({
       </button>
       {status && <p role="status">{status}</p>}
 
-      {voice?.status === 'done' && (
-        <audio
-          controls
-          src={`${fileUrl(project.id, 'voice.wav')}?v=${voice.finished_at}`}
-          aria-label="Narasi"
-        />
-      )}
     </section>
   )
 }
@@ -531,7 +620,7 @@ function TimelinePanel({
   return (
     <section aria-labelledby="timeline-title">
       <div className="row">
-        <h2 id="timeline-title">Timeline ({timeline.clips.length} klip)</h2>
+        <h3 id="timeline-title">Timeline ({timeline.clips.length} klip)</h3>
         <button type="button" onClick={save} disabled={disabled || !changed}>
           Simpan urutan
         </button>
