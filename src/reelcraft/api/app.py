@@ -34,6 +34,11 @@ def list_templates() -> dict[str, str]:
     return project_service.templates()
 
 
+@router.get("/music")
+def list_music() -> list[str]:
+    return project_service.music_moods()
+
+
 @router.get("/version")
 def get_version() -> dict[str, str]:
     return {"version": __version__}

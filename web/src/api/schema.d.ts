@@ -291,6 +291,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/music": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Music */
+        get: operations["list_music_api_v1_music_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/version": {
         parameters: {
             query?: never;
@@ -389,6 +406,8 @@ export interface components {
             template: string;
             /** Instructions */
             instructions: string | null;
+            /** Music */
+            music: string | null;
             /**
              * Created At
              * Format: date-time
@@ -413,6 +432,8 @@ export interface components {
             template?: string | null;
             /** Instructions */
             instructions?: string | null;
+            /** Music */
+            music?: string | null;
         };
         /** RunIn */
         RunIn: {
@@ -1158,6 +1179,26 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    list_music_api_v1_music_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
         };

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from reelcraft.ai.scripting import TEMPLATES
 from reelcraft.core.errors import NotFound, ReelcraftError
 from reelcraft.pipeline import runner
+from reelcraft.storage import music
 from reelcraft.storage.files import project_dir
 from reelcraft.storage.models import Project
 
@@ -26,6 +27,7 @@ class ProjectUpdate(BaseModel):
     topic: str | None = None
     template: str | None = None
     instructions: str | None = None
+    music: str | None = None  # mood folder name; null or blank = no music
 
 
 class ProjectOut(BaseModel):
@@ -36,6 +38,7 @@ class ProjectOut(BaseModel):
     topic: str | None
     template: str
     instructions: str | None
+    music: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -71,12 +74,18 @@ def update(session: Session, project_id: str, data: ProjectUpdate) -> ProjectOut
             del fields[required]
     if fields.get("template", "fakta") not in TEMPLATES:
         raise ReelcraftError(f"Template tidak dikenal. Pilihan: {', '.join(TEMPLATES)}")
-    for key in ("topic", "instructions"):
+    for key in ("topic", "instructions", "music"):
         if key in fields:
             fields[key] = (fields[key] or "").strip() or None
-    brief = {"topic", "template", "instructions"}
-    if any(getattr(project, k) != v for k, v in fields.items() if k in brief):
+    if fields.get("music") and fields["music"] not in music.moods():
+        raise ReelcraftError(
+            f"Musik '{fields['music']}' tidak ada. Taruh lagu di {music.music_dir()}/<mood>/"
+        )
+    changed = {k for k, v in fields.items() if getattr(project, k) != v}
+    if changed & {"topic", "template", "instructions"}:
         runner.invalidate(session, project_id, "script")  # the old script no longer fits
+    elif "music" in changed:
+        runner.invalidate(session, project_id, "render")
     for field, value in fields.items():
         setattr(project, field, value)
     session.flush()
@@ -104,3 +113,8 @@ def resolve_id(session: Session, prefix: str) -> str:
 def templates() -> dict[str, str]:
     """Narration presets: key to description (empty for the free-form one)."""
     return TEMPLATES
+
+
+def music_moods() -> list[str]:
+    """Mood folders that have at least one track."""
+    return music.moods()

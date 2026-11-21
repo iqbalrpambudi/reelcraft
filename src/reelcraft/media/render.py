@@ -7,6 +7,8 @@ from reelcraft.media.subtitles import HEIGHT, WIDTH
 from reelcraft.media.tools import require
 
 FPS = 30
+MUSIC_VOLUME = 0.35  # under the voice even before ducking
+FADE = 1.5  # seconds the music fades out at the end
 COVER = f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT}"
 CONTAIN = f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=decrease:force_divisible_by=2"
 
@@ -49,20 +51,35 @@ def concat(chunks: list[Path], dest: Path) -> None:
     _ffmpeg("-f", "concat", "-safe", "0", "-i", str(listing), "-c", "copy", str(dest))
 
 
-def finish(work: Path, voice: Path, watermark: str | None, duration: float, dest: Path) -> None:
-    """work/video.mp4 + voice + work/subs.ass (+ watermark) -> dest.
+def finish(
+    work: Path, voice: Path, music: Path | None, watermark: str | None, duration: float, dest: Path
+) -> None:
+    """work/video.mp4 + voice (+ music ducked under it) + work/subs.ass (+ watermark) -> dest.
 
     Runs inside `work` so the filter graph names its files relatively: no path escaping."""
-    filters = ["ass=subs.ass"]
+    video = "[0:v]ass=subs.ass"
     if watermark:
         (work / "watermark.txt").write_text(watermark)
-        filters.append(
-            "drawtext=textfile=watermark.txt:expansion=none:fontsize=40:fontcolor=white@0.85"
+        video += (
+            ",drawtext=textfile=watermark.txt:expansion=none:fontsize=40:fontcolor=white@0.85"
             ":borderw=2:bordercolor=black@0.5:x=w-tw-40:y=80"
         )
+    inputs = ["-i", "video.mp4", "-i", str(voice.resolve())]
+    audio = "[1:a]anull[a]"
+    if music:
+        inputs += ["-stream_loop", "-1", "-i", str(music.resolve())]  # loops if shorter
+        fade = max(duration - FADE, 0)
+        audio = (
+            "[1:a]asplit[vo][key];"
+            f"[2:a]volume={MUSIC_VOLUME},afade=t=out:st={fade:.3f}:d={FADE}[bed];"
+            # The bed drops while the voice speaks and comes back in the pauses
+            "[bed][key]sidechaincompress=threshold=0.035:ratio=5:attack=15:release=260[duck];"
+            "[vo][duck]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[a]"
+        )
     _ffmpeg(
-        *("-i", "video.mp4", "-i", str(voice.resolve()), "-vf", ",".join(filters)),
-        *("-map", "0:v", "-map", "1:a", "-t", f"{duration:.3f}"),
+        *inputs,
+        *("-filter_complex", f"{video}[v];{audio}", "-map", "[v]", "-map", "[a]"),
+        *("-t", f"{duration:.3f}"),
         *("-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p"),
         *("-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(dest.resolve())),
         cwd=work,

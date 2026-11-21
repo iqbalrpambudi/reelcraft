@@ -312,7 +312,9 @@ function ScriptPanel({
     topic: project.topic ?? '',
     template: project.template,
     instructions: project.instructions ?? '',
+    music: project.music ?? '',
   })
+  const [moods, setMoods] = useState<string[]>([])
   const [text, setText] = useState('')
   const [savedText, setSavedText] = useState('')
   const saved = useRef('')
@@ -321,6 +323,7 @@ function ScriptPanel({
 
   useEffect(() => {
     api.GET('/api/v1/templates').then(({ data }) => setTemplates(data ?? {}))
+    api.GET('/api/v1/music').then(({ data }) => setMoods(data ?? []))
   }, [])
 
   // Pick up a script the pipeline (re)wrote, unless the user has unsaved edits
@@ -396,6 +399,24 @@ function ScriptPanel({
             value={brief.instructions}
             onChange={(e) => setBrief({ ...brief, instructions: e.target.value })}
           />
+        </div>
+        <div className="field">
+          <label htmlFor="brief-music">Musik latar</label>
+          <select
+            id="brief-music"
+            value={brief.music}
+            onChange={(e) => setBrief({ ...brief, music: e.target.value })}
+          >
+            <option value="">Tanpa musik</option>
+            {moods.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <span className="small muted">
+            Mood = folder lagu di data dir, <code>music/&lt;mood&gt;/</code>.
+          </span>
         </div>
         <div>
           <button type="submit" disabled={disabled}>

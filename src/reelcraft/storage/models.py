@@ -20,6 +20,7 @@ class Project(Base):
     topic: Mapped[str | None] = mapped_column(Text)
     template: Mapped[str] = mapped_column(String(40), default="fakta")  # preset key
     instructions: Mapped[str | None] = mapped_column(Text)  # custom, added to the preset
+    music: Mapped[str | None] = mapped_column(String(100))  # mood folder; None = no music
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
 

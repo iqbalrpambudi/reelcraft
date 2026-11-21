@@ -43,7 +43,7 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 ## v0.6 Edit & Render
 - [x] Step Edit: auto-match scene ke segmen narasi (port inti `matching.py`: jendela shot, skor kata + durasi + urutan, heal; tanpa embedding/heatmap)
 - [x] Subtitle karaoke ASS (pysubs2) + gaya subtitle (font & warna kata aktif di Settings)
-- [ ] Library BGM per mood + auto-duck
+- [x] Library BGM per mood (`<data dir>/music/<mood>/`, pilih per project) + auto-duck
 - [x] Step Render: 9:16 via ffmpeg, background fill (blur / cover / warna), watermark
 - [ ] Render preview (resolusi kecil, cepat)
 - [ ] Web: pratinjau timeline & ubah urutan klip, pengaturan subtitle

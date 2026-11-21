@@ -1,3 +1,5 @@
+import subprocess
+
 import pysubs2
 import pytest
 
@@ -8,7 +10,7 @@ from reelcraft.pipeline import runner
 from reelcraft.pipeline.steps.render import OUTPUT, WORK
 from reelcraft.services import media, projects
 from reelcraft.services.projects import ProjectCreate, ProjectUpdate
-from reelcraft.storage import settings
+from reelcraft.storage import music, settings
 from reelcraft.storage.db import session_scope
 from reelcraft.storage.files import project_dir
 
@@ -52,3 +54,37 @@ def test_pipeline_renders_a_vertical_video_with_the_narration(sample_video, back
     assert (info.width, info.height) == (1080, 1920)
     assert info.duration == pytest.approx(1.0, abs=0.1)  # the narration, not the 4 s source
     assert not (project_dir(pid) / WORK).exists()
+
+
+def _track(mood: str, seconds: float = 0.4) -> None:
+    folder = music.music_dir() / mood
+    folder.mkdir(parents=True, exist_ok=True)
+    tone = f"sine=frequency=220:duration={seconds}"
+    subprocess.run(
+        ["ffmpeg", "-v", "error", "-f", "lavfi", "-i", tone, str(folder / "a.wav")], check=True
+    )
+
+
+def test_music_moods_are_folders_with_tracks():
+    _track("tenang")
+    (music.music_dir() / "kosong").mkdir()
+    assert music.moods() == ["tenang"]
+    assert music.pick("tenang", "p1") == music.pick("tenang", "p1")
+    assert music.pick("../tenang", "p1") == music.pick("tenang", "p1")  # stays inside music/
+
+
+def test_music_is_validated_and_only_reopens_render(sample_video):
+    _track("tenang")
+    with session_scope() as s:
+        pid = projects.create(s, ProjectCreate(name="p")).id
+        projects.update(s, pid, ProjectUpdate(topic="Warna"))
+        media.add(s, pid, str(sample_video))
+    assert runner.run(pid) == "done"
+    with session_scope() as s:
+        with pytest.raises(ReelcraftError, match="tidak ada"):
+            projects.update(s, pid, ProjectUpdate(music="nope"))
+        projects.update(s, pid, ProjectUpdate(music="tenang"))
+        statuses = {r.step: r.status for r in runner.ensure_runs(s, pid)}
+    assert statuses["edit"] == "done" and statuses["render"] == "pending"
+    assert runner.run(pid) == "done"  # a 0.4 s track loops under the 1 s narration
+    assert probe(project_dir(pid) / OUTPUT).duration == pytest.approx(1.0, abs=0.1)

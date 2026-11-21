@@ -22,7 +22,7 @@ def _local(dt: datetime) -> str:
 
 def _show(p: ProjectOut) -> None:
     console.print(f"[bold]{p.name}[/bold]  [dim]{p.id}[/dim]  dibuat {_local(p.created_at)}")
-    console.print(f"  topik: {p.topic or '-'}  template: {p.template}")
+    console.print(f"  topik: {p.topic or '-'}  template: {p.template}  musik: {p.music or '-'}")
     if p.instructions:
         console.print(f"  instruksi: {p.instructions}")
 
@@ -94,9 +94,12 @@ def brief(
     instructions: Annotated[
         str | None, typer.Option(help='Instruksi tambahan untuk naskah. "" untuk menghapus.')
     ] = None,
+    music: Annotated[
+        str | None, typer.Option(help='Mood musik latar (nama folder). "" tanpa musik.')
+    ] = None,
 ) -> None:
-    """Atur bahan naskah: topik, template, instruksi. Tanpa opsi: tampilkan."""
-    given = {"topic": topic, "template": template, "instructions": instructions}
+    """Atur bahan video: topik, template, instruksi, musik. Tanpa opsi: tampilkan."""
+    given = {"topic": topic, "template": template, "instructions": instructions, "music": music}
     with user_errors(), session_scope() as s:
         pid = projects.resolve_id(s, project_id)
         data = ProjectUpdate(**{k: v for k, v in given.items() if v is not None})
