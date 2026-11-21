@@ -57,8 +57,8 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Filter (durasi, lisensi, sudah diimpor) dan impor multi-klip
 
 ## v0.9 Publish & Autopilot
-- [ ] Publish YouTube (OAuth + upload terjadwal)
-- [ ] Publish Facebook Page Reels
+- [x] Publish YouTube (OAuth + upload terjadwal)
+- [x] Publish Facebook Page Reels
 - [ ] Autopilot: pool video, jadwal produksi & slot posting (pilih penjadwal, lihat ADR 0002)
 
 ## v0.10 QC

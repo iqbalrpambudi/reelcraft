@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { api, errorMessage, type AICheck, type SettingItem } from './api/client'
+import { useSearchParams } from 'react-router'
+import { api, errorMessage, type Account, type AICheck, type SettingItem } from './api/client'
 
 const SOURCE_LABEL: Record<string, string> = {
   db: 'tersimpan',
@@ -49,6 +50,7 @@ export function SettingsPage() {
   return (
     <>
       <h1>Settings</h1>
+      <Accounts />
       <form onSubmit={save} className="settings">
         {items.map((it) => (
           <div key={it.key} className="field">
@@ -96,5 +98,73 @@ export function SettingsPage() {
         </ul>
       )}
     </>
+  )
+}
+
+const PLATFORM_LABEL: Record<string, string> = { youtube: 'YouTube', facebook: 'Facebook Page' }
+
+function Accounts() {
+  const [accounts, setAccounts] = useState<Account[]>()
+  const [params] = useSearchParams()
+  const [status, setStatus] = useState(
+    params.get('error') ??
+      (params.get('connected') ? `${PLATFORM_LABEL[params.get('connected')!]} terhubung.` : ''),
+  )
+
+  const load = () => api.GET('/api/v1/accounts').then(({ data }) => setAccounts(data))
+  useEffect(() => {
+    load()
+  }, [])
+
+  const connect = async (platform: string) => {
+    const { data, error } = await api.POST('/api/v1/accounts/{platform}/connect', {
+      params: { path: { platform } },
+    })
+    if (error) return setStatus(errorMessage(error))
+    window.location.href = data.url
+  }
+
+  const disconnect = async (platform: string) => {
+    if (
+      !confirm(
+        `Putuskan ${PLATFORM_LABEL[platform]}? Post terjadwal yang sudah terunggah tetap tayang.`,
+      )
+    )
+      return
+    await api.DELETE('/api/v1/accounts/{platform}', { params: { path: { platform } } })
+    load()
+  }
+
+  return (
+    <section aria-labelledby="accounts-title">
+      <h2 id="accounts-title">Akun posting</h2>
+      <ul className="list">
+        {Object.entries(PLATFORM_LABEL).map(([platform, label]) => {
+          const account = accounts?.find((a) => a.platform === platform)
+          return (
+            <li key={platform} className="row">
+              <div>
+                <strong>{label}</strong>
+                <div className="small muted">{account ? account.name : 'Belum terhubung'}</div>
+              </div>
+              {account ? (
+                <button type="button" className="quiet" onClick={() => disconnect(platform)}>
+                  Putuskan
+                </button>
+              ) : (
+                <button type="button" onClick={() => connect(platform)}>
+                  Hubungkan
+                </button>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+      <p className="small muted">
+        Isi client ID dan secret di bawah dulu. Redirect URI:{' '}
+        <code>{`${window.location.origin}/api/v1/accounts/<platform>/callback`}</code>
+      </p>
+      {status && <p role="status">{status}</p>}
+    </section>
   )
 }

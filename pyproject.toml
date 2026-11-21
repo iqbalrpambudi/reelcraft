@@ -74,7 +74,7 @@ layers = [
     "reelcraft.api",
     "reelcraft.services",
     "reelcraft.pipeline",
-    "reelcraft.ai",
+    "reelcraft.ai | reelcraft.publish",
     "reelcraft.storage | reelcraft.media",
     "reelcraft.core",
 ]

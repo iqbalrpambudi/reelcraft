@@ -8,7 +8,7 @@ import uvicorn
 
 from reelcraft import __version__
 from reelcraft.api.app import STATIC_DIR, create_app
-from reelcraft.cli import config, media, pipeline, project
+from reelcraft.cli import config, media, pipeline, project, publish
 from reelcraft.core.config import get_settings
 from reelcraft.media.tools import REQUIRED_TOOLS
 
@@ -20,6 +20,8 @@ app.command()(pipeline.run)
 app.command()(pipeline.status)
 app.command()(pipeline.script)
 app.command()(pipeline.jobs)
+app.command()(publish.publish)
+app.command()(publish.posts)
 
 
 def _print_version(value: bool) -> None:

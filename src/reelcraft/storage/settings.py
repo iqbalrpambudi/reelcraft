@@ -43,6 +43,18 @@ SPECS: dict[str, Spec] = {
             help="Untuk cari footage. Gratis di pixabay.com/api/docs",
         ),
         Spec(
+            "youtube_client_id",
+            "YouTube OAuth client ID",
+            help="Google Cloud > Credentials > OAuth client (Web). Redirect URI: lihat di atas.",
+        ),
+        Spec("youtube_client_secret", "YouTube OAuth client secret", secret=True),
+        Spec(
+            "facebook_app_id",
+            "Facebook App ID",
+            help="developers.facebook.com, produk Facebook Login. Redirect URI: lihat di atas.",
+        ),
+        Spec("facebook_app_secret", "Facebook App secret", secret=True),
+        Spec(
             "openai_base_url",
             "OpenAI-compatible base URL",
             help="Kosongkan untuk api.openai.com; isi untuk OpenRouter, Ollama, LM Studio, dll.",

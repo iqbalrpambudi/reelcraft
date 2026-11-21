@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { api, useQueue, type Job } from './api/client'
+import { api, usePosts, useQueue, type Job } from './api/client'
 import { STATUS_LABEL, STEP_LABEL } from './labels'
+import { PostList } from './Posts'
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
@@ -14,6 +15,7 @@ const took = (job: Job) => {
 
 export function JobsPage() {
   const queue = useQueue()
+  const [posts, reloadPosts] = usePosts()
   const [jobs, setJobs] = useState<Job[]>()
   const queueKey = queue.map((q) => `${q.project_id}:${q.step}:${q.status}`).join()
 
@@ -45,6 +47,15 @@ export function JobsPage() {
               </li>
             ))}
           </ol>
+        )}
+      </section>
+
+      <section aria-labelledby="posts-title">
+        <h2 id="posts-title">Posting</h2>
+        {posts?.length ? (
+          <PostList posts={posts} onChange={reloadPosts} showProject />
+        ) : (
+          <p className="muted">Belum ada posting.</p>
         )}
       </section>
 

@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     pexels_api_key: str | None = None
     pixabay_api_key: str | None = None
+    youtube_client_id: str | None = None
+    youtube_client_secret: str | None = None
+    facebook_app_id: str | None = None
+    facebook_app_secret: str | None = None
     openai_base_url: str | None = None
     text_model: str | None = None
     vision_model: str | None = None

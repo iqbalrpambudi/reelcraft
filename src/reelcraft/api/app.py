@@ -9,10 +9,11 @@ from starlette.exceptions import HTTPException
 from starlette.types import Scope
 
 from reelcraft import __version__
-from reelcraft.api import jobs, pipeline, projects, settings
+from reelcraft.api import jobs, pipeline, projects, publish, settings
 from reelcraft.core.errors import NotFound, ReelcraftError
 from reelcraft.pipeline import runner, worker
 from reelcraft.services import projects as project_service
+from reelcraft.services import publishing, scheduler
 from reelcraft.storage.db import get_engine
 
 # The web build lands here (see web/vite.config.ts) and ships inside the wheel
@@ -23,6 +24,7 @@ router.include_router(projects.router)
 router.include_router(pipeline.router)
 router.include_router(settings.router)
 router.include_router(jobs.router)
+router.include_router(publish.router)
 
 
 @router.get("/health")
@@ -65,9 +67,11 @@ class SPAStaticFiles(StaticFiles):
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     get_engine()  # fail at startup, not on the first request, if the DB can't be migrated
     runner.recover_interrupted()
-    stop = worker.start()
+    publishing.recover_interrupted()
+    stops = [worker.start(), scheduler.start()]
     yield
-    stop.set()  # a step in progress keeps its daemon thread until the process exits
+    for stop in stops:  # a step or upload in progress keeps its daemon thread until exit
+        stop.set()
 
 
 def create_app() -> FastAPI:

@@ -16,6 +16,8 @@ export type Timeline = Schemas['Timeline']
 export type ActiveStep = Schemas['ActiveStep']
 export type Job = Schemas['JobOut']
 export type Footage = Schemas['FootageOut']
+export type Account = Schemas['AccountOut']
+export type Post = Schemas['PostOut']
 
 /** URL of a file inside a project's data dir (thumbnails, media, renders). */
 export const fileUrl = (projectId: string, path: string) =>
@@ -48,4 +50,26 @@ export function useQueue(): ActiveStep[] {
     }
   }, [])
   return queue
+}
+
+/** Posts, newest first, refreshed every few seconds while uploads go out. */
+export function usePosts(projectId?: string): [Post[] | undefined, () => void] {
+  const [posts, setPosts] = useState<Post[]>()
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      api
+        .GET('/api/v1/posts', { params: { query: { project_id: projectId } } })
+        .then(({ data }) => {
+          if (alive && data) setPosts(data)
+        })
+    load()
+    const timer = setInterval(load, QUEUE_POLL_MS)
+    return () => {
+      alive = false
+      clearInterval(timer)
+    }
+  }, [projectId, tick])
+  return [posts, () => setTick((t) => t + 1)]
 }

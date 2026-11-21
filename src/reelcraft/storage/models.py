@@ -106,3 +106,40 @@ class Setting(Base):
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     value: Mapped[str] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
+
+
+class Account(Base):
+    """A connected platform: YouTube channel (refresh token) or Facebook Page (page token)."""
+
+    __tablename__ = "accounts"
+
+    platform: Mapped[str] = mapped_column(String(20), primary_key=True)  # youtube, facebook
+    remote_id: Mapped[str] = mapped_column(String(64))  # channel / page id
+    name: Mapped[str] = mapped_column(String(200))
+    token: Mapped[str] = mapped_column(Text)  # encrypted
+    connected_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class Post(Base):
+    """One render sent to one platform. Uploaded as soon as it is queued; with publish_at the
+    platform holds it until then, so the computer need not be on at posting time."""
+
+    __tablename__ = "posts"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    platform: Mapped[str] = mapped_column(String(20))
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="")
+    privacy: Mapped[str] = mapped_column(String(20), default="public")  # YouTube only
+    publish_at: Mapped[datetime | None] = mapped_column(UTCDateTime, index=True)  # None = now
+    status: Mapped[str] = mapped_column(
+        String(20), default="queued"
+    )  # queued, uploading, done, failed
+    progress: Mapped[int] = mapped_column(Integer, default=0)
+    remote_id: Mapped[str | None] = mapped_column(String(64))
+    url: Mapped[str | None] = mapped_column(String(300))
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
