@@ -2,9 +2,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
-from scenedetect import ContentDetector, SceneManager, open_video
-
 PROGRESS_CHUNKS = 20
 THUMB_WIDTH = 480  # also what the vision model sees
 
@@ -17,6 +14,10 @@ class Span:
 
 def detect(path: Path, on_progress: Callable[[int], None]) -> list[Span]:
     """Shot boundaries by content change; a video without cuts is one scene."""
+    # Imported here: scenedetect loads OpenCV and PyAV, whose bundled libavdevice copies make
+    # macOS print a duplicate-class warning on every CLI command otherwise
+    from scenedetect import ContentDetector, SceneManager, open_video
+
     video = open_video(str(path))
     manager = SceneManager()
     manager.add_detector(ContentDetector())
@@ -33,6 +34,8 @@ def detect(path: Path, on_progress: Callable[[int], None]) -> list[Span]:
 
 
 def thumbnail(video: Path, at: float, dest: Path) -> None:
+    import cv2  # see detect
+
     cap = cv2.VideoCapture(str(video))
     try:
         cap.set(cv2.CAP_PROP_POS_MSEC, at * 1000)
