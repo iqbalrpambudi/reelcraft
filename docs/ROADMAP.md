@@ -68,7 +68,7 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 ## v1.0 Siap pakai
 - [x] Mode service: start/stop di background, auto-start saat login (launchd / systemd, `reelcraft service`)
 - [x] Logging terstruktur (structlog) + `reelcraft logs`
-- [ ] Dokumentasi pengguna & installer
+- [x] Dokumentasi pengguna & installer (`docs/PANDUAN.md`, `install.sh`)
 - [ ] Rilis pertama: push `main`, merge PR rilis
 
 ## Setelah 1.0 (ide)

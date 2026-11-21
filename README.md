@@ -2,50 +2,28 @@
 
 A production line for short-form video (Shorts, Reels), from the CLI or a web dashboard.
 
-## Prasyarat
+Footage → naskah AI → suara → klip yang dicocokkan dengan narasi → render 1080×1920 dengan subtitle karaoke dan musik → posting ke YouTube / Facebook Page, manual atau oleh Autopilot. QC mengecek tiap tahap.
 
-- [uv](https://docs.astral.sh/uv/) (Python 3.12 diunduh otomatis)
-- Node.js 24+
-- ffmpeg (dibutuhkan mulai pipeline render)
+## Pasang
 
-## Mulai
+macOS / Linux:
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/iqbalrpambudi/reelcraft/main/install.sh | sh
+reelcraft serve          # atau: reelcraft service install
+```
+
+Panduan lengkap (API key, membuat video, posting, Autopilot, CLI, masalah umum): **[docs/PANDUAN.md](docs/PANDUAN.md)**.
+
+## Development
+
+Prasyarat: [uv](https://docs.astral.sh/uv/), Node.js 24+, ffmpeg.
 
 ```bash
 make setup          # deps Python + web, pasang git hooks
 make web-build      # build dashboard ke dalam package
 uv run reelcraft serve
-```
 
-Dashboard terbuka di http://127.0.0.1:8765: buat project, tambah media (URL, path, atau unggah), jalankan pipeline dan pantau progresnya live, lalu lihat scene hasil analisis. Run dari web masuk antrean dan dikerjakan satu per satu oleh worker di dalam `serve`; run dari CLI juga terlihat live di web. Data disimpan di `~/.reelcraft` (ubah dengan `REELCRAFT_DATA_DIR`).
-
-## CLI
-
-```bash
-reelcraft project new "Jawa di Eropa"
-reelcraft project list
-reelcraft project show 6c75          # id boleh awalan yang unik
-reelcraft project rename 6c75 "Nama baru"
-reelcraft project delete 6c75 -y
-
-reelcraft media add 6c75 ~/Videos/klip.mp4 https://youtu.be/...
-reelcraft run 6c75                   # lanjut dari step yang belum selesai
-reelcraft run 6c75 --from analyze    # ulang dari step tertentu (step setelahnya ikut di-reset)
-reelcraft status 6c75
-reelcraft doctor                     # cek ffmpeg, data dir, dashboard
-
-reelcraft config set gemini_api_key  # diminta tanpa echo, disimpan terenkripsi
-reelcraft config set vision_model google:gemini-flash-lite-latest
-reelcraft config list               # nilai + asalnya (db, env, default)
-reelcraft config check              # uji koneksi model teks & vision
-```
-
-API key bisa juga lewat environment atau `.env` (`REELCRAFT_GEMINI_API_KEY=...`); nilai yang disimpan lewat Settings/`config set` didahulukan. Model ditulis `provider:model` dengan provider `google` atau `openai` (OpenAI-compatible: OpenRouter, Ollama, LM Studio lewat base URL).
-
-Pipeline per project: `ingest` (salin/unduh media, baca metadata) → `analyze` (deteksi scene + thumbnail) → `tag` (deskripsi & tag tiap scene oleh model vision) → step berikutnya menyusul (lihat [docs/ROADMAP.md](docs/ROADMAP.md)).
-
-## Development
-
-```bash
 make dev-api        # terminal 1: API dengan auto-reload
 make dev-web        # terminal 2: Vite di http://localhost:5173 (proxy /api ke dev-api)
 make test
@@ -61,15 +39,16 @@ src/reelcraft/
 ├─ cli/        Typer; satu file per kelompok perintah
 ├─ api/        FastAPI, router tipis + serve web build
 ├─ services/   use case yang dipakai bersama CLI & API
-├─ pipeline/   runner, antrean, dan step (ingest, analyze, tag)
-├─ ai/         model pydantic-ai dari Settings, prompt & output terstruktur
-├─ media/      ffmpeg, scene detection, yt-dlp
+├─ pipeline/   runner, antrean, step (ingest → render), matching, gate QC
+├─ ai/         model pydantic-ai dari Settings, prompt & output terstruktur, TTS
+├─ publish/    klien YouTube & Facebook (OAuth, upload)
+├─ media/      ffmpeg, scene detection, yt-dlp, whisper, subtitle, pencarian footage
 ├─ storage/    model SQLAlchemy, session, migrasi Alembic
-└─ core/       config, error, enkripsi secret; tidak import apa pun dari layer lain
+└─ core/       config, error, enkripsi secret, logging; tidak import apa pun dari layer lain
 web/           dashboard React + Vite; src/api/schema.d.ts di-generate
 docs/adr/      catatan keputusan arsitektur
 ```
 
-Arah dependensi `cli → api → services → pipeline → ai → storage | media → core` dijaga oleh `lint-imports`. Skema DB hanya berubah lewat migrasi; aplikasi otomatis migrate saat start.
+Arah dependensi `cli → api → services → pipeline → ai | publish → storage | media → core` dijaga oleh `lint-imports`. Skema DB hanya berubah lewat migrasi; aplikasi otomatis migrate saat start.
 
 Lihat [CONTRIBUTING.md](CONTRIBUTING.md) untuk branching, commit, dan rilis.
