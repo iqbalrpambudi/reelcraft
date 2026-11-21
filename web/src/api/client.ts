@@ -15,6 +15,7 @@ export type AICheck = Schemas['AICheck']
 export type Timeline = Schemas['Timeline']
 export type ActiveStep = Schemas['ActiveStep']
 export type Job = Schemas['JobOut']
+export type Footage = Schemas['FootageOut']
 
 /** URL of a file inside a project's data dir (thumbnails, media, renders). */
 export const fileUrl = (projectId: string, path: string) =>

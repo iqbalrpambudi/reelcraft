@@ -59,6 +59,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/media/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Media Batch */
+        post: operations["add_media_batch_api_v1_projects__project_id__media_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Discover Footage
+         * @description Search footage on YouTube, Pexels, Pixabay and Archive.org.
+         */
+        get: operations["discover_footage_api_v1_projects__project_id__discover_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/media/upload": {
         parameters: {
             query?: never;
@@ -421,6 +458,38 @@ export interface components {
             /** File */
             file: string;
         };
+        /** DiscoverOut */
+        DiscoverOut: {
+            /** Results */
+            results: components["schemas"]["FootageOut"][];
+            /** Errors */
+            errors: {
+                [key: string]: string;
+            };
+        };
+        /** FootageOut */
+        FootageOut: {
+            /** Source */
+            source: string;
+            /** Url */
+            url: string;
+            /** Page */
+            page: string;
+            /** Title */
+            title: string;
+            /** Thumbnail */
+            thumbnail: string | null;
+            /** Duration */
+            duration: number | null;
+            /** License */
+            license: string;
+            /** Free */
+            free: boolean;
+            /** Author */
+            author: string | null;
+            /** Imported */
+            imported: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -449,6 +518,11 @@ export interface components {
             started_at: string;
             /** Finished At */
             finished_at: string | null;
+        };
+        /** MediaBatchIn */
+        MediaBatchIn: {
+            /** Sources */
+            sources: string[];
         };
         /** MediaIn */
         MediaIn: {
@@ -861,6 +935,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MediaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_media_batch_api_v1_projects__project_id__media_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaBatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discover_footage_api_v1_projects__project_id__discover_get: {
+        parameters: {
+            query: {
+                q: string;
+                sources?: string[] | null;
+                limit?: number;
+                min_duration?: number | null;
+                max_duration?: number | null;
+                free_only?: boolean;
+                hide_imported?: boolean;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoverOut"];
                 };
             };
             /** @description Validation Error */

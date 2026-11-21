@@ -295,3 +295,54 @@ video.result {
 .job-when {
   text-align: right;
 }
+
+.discover-form {
+  display: grid;
+  gap: 8px;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.row.wrap {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 4px 16px;
+}
+
+input.narrow {
+  width: 5em;
+  flex: none;
+  padding: 4px 8px;
+}
+
+.footage {
+  list-style: none;
+  padding: 0;
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.footage li {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.footage img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.free {
+  color: #16a34a;
+}

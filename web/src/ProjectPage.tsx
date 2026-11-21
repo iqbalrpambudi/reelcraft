@@ -9,6 +9,7 @@ import {
   type Scene,
   type StepRun,
   type Timeline,
+  type Footage,
 } from './api/client'
 import { STATUS_LABEL, STEP_LABEL } from './labels'
 
@@ -149,7 +150,10 @@ export function ProjectPage() {
             </p>
           )}
           {current.step === 'ingest' && (
-            <MediaPanel projectId={id} media={media} disabled={busy} onChange={reload} />
+            <>
+              <MediaPanel projectId={id} media={media} disabled={busy} onChange={reload} />
+              <DiscoverPanel projectId={id} disabled={busy} onImported={reload} />
+            </>
           )}
           {current.step === 'analyze' && <SceneGrid projectId={id} scenes={scenes} />}
           {current.step === 'tag' && <SceneGrid projectId={id} scenes={scenes} described />}
@@ -649,6 +653,200 @@ function TimelinePanel({
           )
         })}
       </ol>
+    </section>
+  )
+}
+
+const SOURCES = ['youtube', 'pexels', 'pixabay', 'archive'] as const
+const SOURCE_LABEL: Record<string, string> = {
+  youtube: 'YouTube',
+  pexels: 'Pexels',
+  pixabay: 'Pixabay',
+  archive: 'Archive.org',
+}
+
+function DiscoverPanel({
+  projectId,
+  disabled,
+  onImported,
+}: {
+  projectId: string
+  disabled: boolean
+  onImported: () => void
+}) {
+  const [query, setQuery] = useState('')
+  const [sources, setSources] = useState<string[]>([...SOURCES])
+  const [minDuration, setMinDuration] = useState('')
+  const [maxDuration, setMaxDuration] = useState('')
+  const [freeOnly, setFreeOnly] = useState(false)
+  const [hideImported, setHideImported] = useState(true)
+  const [results, setResults] = useState<Footage[]>()
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [picked, setPicked] = useState<string[]>([])
+  const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState('')
+  const path = { project_id: projectId }
+
+  const search = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBusy(true)
+    setStatus('')
+    const { data, error } = await api.GET('/api/v1/projects/{project_id}/discover', {
+      params: {
+        path,
+        query: {
+          q: query,
+          sources,
+          min_duration: minDuration ? Number(minDuration) : null,
+          max_duration: maxDuration ? Number(maxDuration) : null,
+          free_only: freeOnly,
+          hide_imported: hideImported,
+        },
+      },
+    })
+    setBusy(false)
+    setResults(data?.results)
+    setErrors(data?.errors ?? {})
+    setPicked([])
+    if (error) setStatus(errorMessage(error))
+  }
+
+  const importPicked = async () => {
+    setBusy(true)
+    const { error } = await api.POST('/api/v1/projects/{project_id}/media/batch', {
+      params: { path },
+      body: { sources: picked },
+    })
+    setBusy(false)
+    if (error) return setStatus(errorMessage(error))
+    setResults(results?.map((r) => (picked.includes(r.url) ? { ...r, imported: true } : r)))
+    setStatus(`${picked.length} klip ditambahkan. Jalankan untuk mengunduh.`)
+    setPicked([])
+    onImported()
+  }
+
+  const toggle = <T,>(list: T[], item: T) =>
+    list.includes(item) ? list.filter((x) => x !== item) : [...list, item]
+
+  return (
+    <section aria-labelledby="discover-title">
+      <h3 id="discover-title">Cari footage</h3>
+      <form onSubmit={search} className="discover-form">
+        <div className="row">
+          <label htmlFor="discover-q" className="sr-only">
+            Kata kunci
+          </label>
+          <input
+            id="discover-q"
+            placeholder="Kata kunci, mis. pembuatan keris"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            required
+          />
+          <button type="submit" disabled={busy || sources.length === 0}>
+            {busy ? 'Mencari...' : 'Cari'}
+          </button>
+        </div>
+        <fieldset className="row wrap">
+          <legend className="sr-only">Sumber</legend>
+          {SOURCES.map((src) => (
+            <label key={src} className="small">
+              <input
+                type="checkbox"
+                checked={sources.includes(src)}
+                onChange={() => setSources(toggle(sources, src))}
+              />{' '}
+              {SOURCE_LABEL[src]}
+            </label>
+          ))}
+        </fieldset>
+        <div className="row wrap small">
+          <label>
+            Durasi{' '}
+            <input
+              type="number"
+              min={0}
+              className="narrow"
+              placeholder="min"
+              aria-label="Durasi minimum (detik)"
+              value={minDuration}
+              onChange={(e) => setMinDuration(e.target.value)}
+            />
+            –
+            <input
+              type="number"
+              min={0}
+              className="narrow"
+              placeholder="maks"
+              aria-label="Durasi maksimum (detik)"
+              value={maxDuration}
+              onChange={(e) => setMaxDuration(e.target.value)}
+            />{' '}
+            detik
+          </label>
+          <label>
+            <input type="checkbox" checked={freeOnly} onChange={() => setFreeOnly(!freeOnly)} />{' '}
+            Hanya lisensi bebas (boleh diedit & dimonetisasi)
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={hideImported}
+              onChange={() => setHideImported(!hideImported)}
+            />{' '}
+            Sembunyikan yang sudah diimpor
+          </label>
+        </div>
+      </form>
+      {Object.entries(errors).map(([src, message]) => (
+        <p key={src} className="small error">
+          {SOURCE_LABEL[src] ?? src}: {message}
+        </p>
+      ))}
+      {status && <p role="status">{status}</p>}
+      {results && results.length === 0 && <p className="muted">Tidak ada hasil.</p>}
+      {results && results.length > 0 && (
+        <>
+          <div className="row">
+            <span className="small muted">{results.length} hasil</span>
+            <button
+              type="button"
+              onClick={importPicked}
+              disabled={disabled || busy || picked.length === 0}
+            >
+              Impor {picked.length || ''} klip
+            </button>
+          </div>
+          <ul className="footage">
+            {results.map((f) => (
+              <li key={f.url}>
+                <label>
+                  {f.thumbnail && <img src={f.thumbnail} alt="" loading="lazy" />}
+                  <input
+                    type="checkbox"
+                    checked={picked.includes(f.url)}
+                    disabled={f.imported}
+                    onChange={() => setPicked(toggle(picked, f.url))}
+                  />{' '}
+                  <strong className="small">{f.title}</strong>
+                </label>
+                <span className="small muted">
+                  {SOURCE_LABEL[f.source]}
+                  {f.duration ? ` · ${formatTime(f.duration)}` : ''}
+                  {f.author ? ` · ${f.author}` : ''}
+                </span>
+                <span className={`small ${f.free ? 'free' : 'muted'}`}>
+                  {f.free ? 'Lisensi bebas' : f.license}
+                  {f.imported && ' · sudah diimpor'}
+                </span>
+                <a className="small" href={f.page} target="_blank" rel="noreferrer">
+                  Buka sumber
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
   )
 }

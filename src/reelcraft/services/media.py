@@ -62,6 +62,11 @@ def add(session: Session, project_id: str, source: str) -> MediaOut:
     return MediaOut.model_validate(media)
 
 
+def add_many(session: Session, project_id: str, sources: list[str]) -> list[MediaOut]:
+    """Several at once, all or none: one bad path rejects the whole batch."""
+    return [add(session, project_id, source) for source in sources]
+
+
 def upload(session: Session, project_id: str, filename: str, data: BinaryIO) -> MediaOut:
     """Store an uploaded file in the project, then register it like a local file."""
     if not session.get(Project, project_id):

@@ -3,14 +3,15 @@ import json
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from reelcraft.api.deps import get_session
 from reelcraft.pipeline import runner
-from reelcraft.services import media, pipeline, scripts, timeline
+from reelcraft.services import discovery, media, pipeline, scripts, timeline
+from reelcraft.services.discovery import DiscoverOut
 from reelcraft.services.media import MediaOut, SceneOut
 from reelcraft.services.pipeline import StepRunOut
 from reelcraft.services.scripts import ScriptText
@@ -26,6 +27,10 @@ HEARTBEAT_SECONDS = 15
 
 class MediaIn(BaseModel):
     source: str  # URL, or a path on the machine running the server
+
+
+class MediaBatchIn(BaseModel):
+    sources: list[str]
 
 
 class ScriptIn(BaseModel):
@@ -49,6 +54,37 @@ def list_media(project_id: str, db: Db) -> list[MediaOut]:
 @router.post("/media", status_code=201)
 def add_media(project_id: str, data: MediaIn, db: Db) -> MediaOut:
     return media.add(db, project_id, data.source)
+
+
+@router.post("/media/batch", status_code=201)
+def add_media_batch(project_id: str, data: MediaBatchIn, db: Db) -> list[MediaOut]:
+    return media.add_many(db, project_id, data.sources)
+
+
+@router.get("/discover")
+def discover_footage(
+    project_id: str,
+    db: Db,
+    q: str,
+    sources: Annotated[list[str] | None, Query()] = None,
+    limit: int = 12,
+    min_duration: float | None = None,
+    max_duration: float | None = None,
+    free_only: bool = False,
+    hide_imported: bool = False,
+) -> DiscoverOut:
+    """Search footage on YouTube, Pexels, Pixabay and Archive.org."""
+    return discovery.search(
+        db,
+        project_id,
+        q,
+        sources,
+        min(limit, 50),
+        min_duration,
+        max_duration,
+        free_only,
+        hide_imported,
+    )
 
 
 @router.post("/media/upload", status_code=201)

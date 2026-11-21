@@ -52,9 +52,9 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Player video/audio untuk hasil tiap step
 - [x] Indikator antrean global dan riwayat job (halaman Jobs, `reelcraft jobs`)
 
-## v0.8 Discovery
-- [ ] Pencarian footage multi-sumber: YouTube, Pexels, Pixabay, Archive.org
-- [ ] Filter (durasi, lisensi, sudah diimpor) dan impor multi-klip
+## v0.8 Discovery ✅
+- [x] Pencarian footage multi-sumber: YouTube, Pexels, Pixabay, Archive.org (`reelcraft media find`)
+- [x] Filter (durasi, lisensi, sudah diimpor) dan impor multi-klip
 
 ## v0.9 Publish & Autopilot
 - [ ] Publish YouTube (OAuth + upload terjadwal)

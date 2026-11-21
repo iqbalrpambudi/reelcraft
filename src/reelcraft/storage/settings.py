@@ -31,6 +31,18 @@ SPECS: dict[str, Spec] = {
         ),
         Spec("openai_api_key", "OpenAI-compatible API key", secret=True),
         Spec(
+            "pexels_api_key",
+            "Pexels API key",
+            secret=True,
+            help="Untuk cari footage. Gratis di pexels.com/api",
+        ),
+        Spec(
+            "pixabay_api_key",
+            "Pixabay API key",
+            secret=True,
+            help="Untuk cari footage. Gratis di pixabay.com/api/docs",
+        ),
+        Spec(
             "openai_base_url",
             "OpenAI-compatible base URL",
             help="Kosongkan untuk api.openai.com; isi untuk OpenRouter, Ollama, LM Studio, dll.",
