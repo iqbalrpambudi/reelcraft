@@ -8,7 +8,7 @@ import uvicorn
 
 from reelcraft import __version__
 from reelcraft.api.app import STATIC_DIR, create_app
-from reelcraft.cli import config, media, pipeline, project, publish
+from reelcraft.cli import config, media, pipeline, project, publish, service
 from reelcraft.core.config import get_settings
 from reelcraft.media.tools import REQUIRED_TOOLS
 
@@ -16,6 +16,7 @@ app = typer.Typer(help="Reelcraft: a production line for short-form video.", no_
 app.add_typer(project.app, name="project")
 app.add_typer(media.app, name="media")
 app.add_typer(config.app, name="config")
+app.add_typer(service.app, name="service")
 app.command()(pipeline.run)
 app.command()(pipeline.status)
 app.command()(pipeline.script)

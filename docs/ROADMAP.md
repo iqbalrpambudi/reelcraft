@@ -66,7 +66,7 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Auto-fix naskah & laporan QC di web (`reelcraft qc --fix`)
 
 ## v1.0 Siap pakai
-- [ ] Mode service: start/stop di background, auto-start saat login (launchd / systemd)
+- [x] Mode service: start/stop di background, auto-start saat login (launchd / systemd, `reelcraft service`)
 - [ ] Logging terstruktur (structlog) + `reelcraft logs`
 - [ ] Dokumentasi pengguna & installer
 - [ ] Rilis pertama: push `main`, merge PR rilis
