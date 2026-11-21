@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     tts_model: str | None = None
     tts_voice: str | None = None
     whisper_model: str | None = None
+    background: str | None = None
+    subtitle_font: str | None = None
+    subtitle_color: str | None = None
+    watermark: str | None = None
 
     @property
     def database_url(self) -> str:

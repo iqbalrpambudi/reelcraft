@@ -60,6 +60,20 @@ SPECS: dict[str, Spec] = {
             help="Nama voice Gemini, mis. Kore, Puck, Charon, Aoede.",
         ),
         Spec(
+            "background",
+            "Background video",
+            default="blur",
+            help="Isi frame 9:16: blur (video diburamkan), cover (dipotong penuh), atau #RRGGBB.",
+        ),
+        Spec("subtitle_font", "Font subtitle", default="Arial", help="Font yang terpasang."),
+        Spec(
+            "subtitle_color",
+            "Warna kata aktif",
+            default="#FFE600",
+            help="Warna kata yang sedang dibacakan, #RRGGBB.",
+        ),
+        Spec("watermark", "Watermark", help="Teks di pojok kanan atas. Kosongkan jika tidak ada."),
+        Spec(
             "whisper_model",
             "Model faster-whisper",
             default="small",

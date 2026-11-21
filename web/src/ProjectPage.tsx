@@ -17,6 +17,7 @@ const STEP_LABEL: Record<string, string> = {
   script: 'Naskah',
   voice: 'Suara',
   edit: 'Susun klip',
+  render: 'Render',
 }
 const BUSY = ['reserved', 'queued', 'running']
 
@@ -67,6 +68,9 @@ export function ProjectPage() {
 
   const path = { project_id: id }
   const busy = steps.some((s) => BUSY.includes(s.status))
+  const renderRun = steps.find((s) => s.step === 'render')
+  const rendered =
+    renderRun?.status === 'done' ? `${fileUrl(id, 'render.mp4')}?v=${renderRun.finished_at}` : ''
 
   const run = async (start?: string) => {
     const { error } = await api.POST('/api/v1/projects/{project_id}/run', {
@@ -123,6 +127,18 @@ export function ProjectPage() {
           ))}
         </ol>
       </section>
+
+      {rendered && (
+        <section aria-labelledby="result-title">
+          <div className="row">
+            <h2 id="result-title">Hasil</h2>
+            <a href={rendered} download={`${project.name}.mp4`}>
+              Unduh
+            </a>
+          </div>
+          <video controls className="result" src={rendered} aria-label="Video hasil render" />
+        </section>
+      )}
 
       <MediaPanel projectId={id} media={media} disabled={busy} onChange={reload} />
 

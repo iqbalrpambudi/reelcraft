@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 
 from reelcraft.core.errors import NotFound, ReelcraftError
 from reelcraft.pipeline.context import Cancelled, Listener, StepContext
-from reelcraft.pipeline.steps import analyze, edit, ingest, script, tag, voice
+from reelcraft.pipeline.steps import analyze, edit, ingest, render, script, tag, voice
 from reelcraft.storage.db import session_scope, utcnow
 from reelcraft.storage.files import project_dir
 from reelcraft.storage.models import Project, StepRun
 
-# Order is the pipeline; later milestones append render, publish
+# Order is the pipeline; later milestones append publish
 STEPS: dict[str, Callable[[StepContext], None]] = {
     "ingest": ingest.run,
     "analyze": analyze.run,
@@ -18,6 +18,7 @@ STEPS: dict[str, Callable[[StepContext], None]] = {
     "script": script.run,
     "voice": voice.run,
     "edit": edit.run,
+    "render": render.run,
 }
 
 

@@ -236,3 +236,12 @@ header nav {
   gap: 4px;
   align-content: start;
 }
+
+video.result {
+  display: block;
+  max-height: 70vh;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: black;
+}

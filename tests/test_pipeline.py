@@ -90,7 +90,7 @@ def test_cancel_request_stops_at_next_progress(sample_video, monkeypatch):
 def test_claim_rejects_double_run_and_bad_ranges(sample_video):
     pid = _project_with(sample_video)
     with pytest.raises(ReelcraftError, match="tidak dikenal"):
-        runner.claim(pid, "render", None)
+        runner.claim(pid, "nope", None)
     with pytest.raises(ReelcraftError, match="setelah"):
         runner.claim(pid, "analyze", "ingest")
     assert runner.claim(pid, None, None) == list(runner.STEPS)
