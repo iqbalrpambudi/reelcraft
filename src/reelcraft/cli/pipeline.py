@@ -15,6 +15,7 @@ from reelcraft.core.errors import ReelcraftError
 from reelcraft.pipeline import runner
 from reelcraft.services import jobs as job_service
 from reelcraft.services import pipeline, projects, scripts
+from reelcraft.services import qc as qc_service
 from reelcraft.storage.db import session_scope
 
 console = Console()
@@ -140,3 +141,31 @@ def jobs(
             f"di {j.step}: {j.error}" if j.error else "",
         )
     console.print(table)
+
+
+SEVERITY_STYLE = {"blocker": "red", "major": "yellow", "minor": "dim"}
+
+
+def qc(
+    project_id: ProjectId,
+    fix: Annotated[bool, typer.Option("--fix", help="Perbaiki naskah otomatis dulu.")] = False,
+) -> None:
+    """Laporan QC per step; --fix memperbaiki naskah (voice dst. perlu dijalankan ulang)."""
+    with user_errors(), session_scope() as s:
+        pid = projects.resolve_id(s, project_id)
+        if fix:
+            for change in qc_service.fix_script(s, pid).fixes or [
+                "Tidak ada yang perlu diperbaiki."
+            ]:
+                console.print(f"[green]✓[/green] {change}")
+        found = qc_service.reports(s, pid)
+    for step, report in found.items():
+        if report is None:
+            console.print(f"[bold]{step}[/bold]  [dim]belum dicek[/dim]")
+            continue
+        console.print(
+            f"[bold]{step}[/bold]  {'OK' if not report.issues else f'{len(report.issues)} catatan'}"
+        )
+        for issue in report.issues:
+            style = SEVERITY_STYLE[issue.severity]
+            console.print(f"  [{style}]{issue.severity:<7}[/{style}] {issue.message}")

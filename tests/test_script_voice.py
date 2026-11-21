@@ -57,11 +57,13 @@ def test_script_parse_roundtrip():
 
 def test_run_writes_script_audio_and_word_timings(sample_video):
     pid = _voiced(sample_video)
-    assert script.load(pid) == script.Script("Judul uji", ["Halo semua.", "Ini scene kedua."])
+    assert script.load(pid) == script.Script(
+        "Judul uji", ["Tahukah kamu warna ini?", "Ini scene kedua."]
+    )
     timings = json.loads((project_dir(pid) / voice.TIMINGS).read_text())
     assert timings["duration"] == 1.0
     first, second = timings["segments"]
-    assert [w["text"] for w in first["words"]] == ["Halo", "semua."]
+    assert [w["text"] for w in first["words"]] == ["Tahukah", "kamu", "warna", "ini?"]
     assert (first["start"], second["start"]) == (0.0, 0.4)
     assert (project_dir(pid) / voice.AUDIO).stat().st_size > 40_000
 
@@ -135,11 +137,11 @@ def test_cli_brief_and_script_editor(sample_video, monkeypatch, tmp_path):
     editor.write_text(
         "import pathlib, sys\n"
         "p = pathlib.Path(sys.argv[1])\n"
-        "p.write_text(p.read_text().replace('Halo', 'Hai'))\n"
+        "p.write_text(p.read_text().replace('Tahukah', 'Tahu'))\n"
     )
     monkeypatch.setenv("EDITOR", f"{sys.executable} {editor}")
     assert cli(app, ["script", pid[:8]]).exit_code == 0
-    assert script.load(pid).segments[0] == "Hai semua."
+    assert script.load(pid).segments[0] == "Tahu kamu warna ini?"
     monkeypatch.setenv("EDITOR", "true")
     assert "Tidak ada perubahan" in cli(app, ["script", pid[:8]]).output
     monkeypatch.setenv("EDITOR", "false")

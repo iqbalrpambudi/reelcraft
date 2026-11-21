@@ -61,9 +61,9 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Publish Facebook Page Reels
 - [x] Autopilot: pool video, jadwal produksi & slot posting (ADR 0003, `reelcraft autopilot`)
 
-## v0.10 QC
-- [ ] Gate kualitas per step (port `qc.py`, dipecah per pemeriksaan)
-- [ ] Auto-fix naskah & laporan QC di web
+## v0.10 QC ✅
+- [x] Gate kualitas per step (port `qc.py`, dipecah per pemeriksaan)
+- [x] Auto-fix naskah & laporan QC di web (`reelcraft qc --fix`)
 
 ## v1.0 Siap pakai
 - [ ] Mode service: start/stop di background, auto-start saat login (launchd / systemd)

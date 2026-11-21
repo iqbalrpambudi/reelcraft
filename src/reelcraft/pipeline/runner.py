@@ -4,6 +4,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from reelcraft.core.errors import NotFound, ReelcraftError
+from reelcraft.pipeline import qc
 from reelcraft.pipeline.context import Cancelled, Listener, StepContext
 from reelcraft.pipeline.steps import analyze, edit, ingest, render, script, tag, voice
 from reelcraft.storage.db import session_scope, utcnow
@@ -151,6 +152,7 @@ def _execute(
         error = None
         try:
             STEPS[step](ctx)
+            qc.gate(step, ctx.dir)
         except Cancelled:
             status = "cancelled"
         except KeyboardInterrupt:

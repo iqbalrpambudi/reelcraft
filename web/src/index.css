@@ -346,3 +346,27 @@ input.narrow {
 .free {
   color: #16a34a;
 }
+
+.qc {
+  margin-top: 16px;
+}
+
+.qc-blocker,
+.qc-major,
+.qc-minor {
+  display: inline-block;
+  min-width: 6.5em;
+  font-weight: 600;
+}
+
+.qc-blocker {
+  color: var(--danger);
+}
+
+.qc-major {
+  color: #b45309;
+}
+
+.qc-minor {
+  color: var(--muted, #6b7280);
+}

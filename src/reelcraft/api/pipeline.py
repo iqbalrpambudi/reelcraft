@@ -10,10 +10,11 @@ from sqlalchemy.orm import Session
 
 from reelcraft.api.deps import get_session
 from reelcraft.pipeline import runner
-from reelcraft.services import discovery, media, pipeline, scripts, timeline
+from reelcraft.services import discovery, media, pipeline, qc, scripts, timeline
 from reelcraft.services.discovery import DiscoverOut
 from reelcraft.services.media import MediaOut, SceneOut
 from reelcraft.services.pipeline import StepRunOut
+from reelcraft.services.qc import ReportOut
 from reelcraft.services.scripts import ScriptText
 from reelcraft.services.timeline import Timeline
 from reelcraft.storage.db import session_scope
@@ -110,6 +111,23 @@ def get_script(project_id: str, db: Db) -> ScriptText:
 @router.put("/script")
 def save_script(project_id: str, data: ScriptIn, db: Db) -> ScriptText:
     return scripts.save(db, project_id, data.text)
+
+
+@router.get("/qc")
+def get_qc(project_id: str, db: Db) -> dict[str, ReportOut | None]:
+    """Last quality report per checked step."""
+    return qc.reports(db, project_id)
+
+
+@router.post("/qc/{step}")
+def recheck(project_id: str, step: str, db: Db) -> ReportOut:
+    return qc.check(db, project_id, step)
+
+
+@router.post("/script/fix")
+def fix_script(project_id: str, db: Db) -> ReportOut:
+    """Repair what QC can without a person: labels, too long or too short sentences."""
+    return qc.fix_script(db, project_id)
 
 
 @router.get("/timeline")

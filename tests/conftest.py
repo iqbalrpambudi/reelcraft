@@ -69,7 +69,7 @@ def offline_vision(monkeypatch) -> None:
     monkeypatch.setattr(tag, "model_for", lambda task: FunctionModel(_describe_every_image))
 
 
-FAKE_SCRIPT = {"title": "Judul uji", "segments": ["Halo semua.", "Ini scene kedua."]}
+FAKE_SCRIPT = {"title": "Judul uji", "segments": ["Tahukah kamu warna ini?", "Ini scene kedua."]}
 
 
 @pytest.fixture(autouse=True)

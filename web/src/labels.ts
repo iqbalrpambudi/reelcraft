@@ -18,3 +18,6 @@ export const STATUS_LABEL: Record<string, string> = {
   failed: 'gagal',
   cancelled: 'dibatalkan',
 }
+
+// Steps with a quality gate (pipeline/qc GATES)
+export const QC_STEPS = ['script', 'voice', 'edit', 'render']

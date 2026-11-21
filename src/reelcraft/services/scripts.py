@@ -2,9 +2,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from reelcraft.core.errors import NotFound, ReelcraftError
-from reelcraft.pipeline import runner
+from reelcraft.pipeline import qc, runner
 from reelcraft.storage import script
 from reelcraft.storage.db import utcnow
+from reelcraft.storage.files import project_dir
 from reelcraft.storage.models import Project
 
 
@@ -33,4 +34,5 @@ def save(session: Session, project_id: str, text: str) -> ScriptText:
         if r.step == "script":
             r.status, r.progress, r.message, r.error = "done", 100, None, None
             r.finished_at = utcnow()
+    qc.run("script", project_dir(project_id))  # the report should describe this text
     return get(session, project_id)

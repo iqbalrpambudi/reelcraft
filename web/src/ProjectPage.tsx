@@ -11,8 +11,9 @@ import {
   type Timeline,
   type Footage,
 } from './api/client'
-import { STATUS_LABEL, STEP_LABEL } from './labels'
+import { QC_STEPS, STATUS_LABEL, STEP_LABEL } from './labels'
 import { PublishPanel } from './Posts'
+import { QcPanel } from './Qc'
 
 const BUSY = ['reserved', 'queued', 'running']
 
@@ -178,6 +179,15 @@ export function ProjectPage() {
           )}
           {(current.step === 'preview' || current.step === 'render') && (
             <VideoResult projectId={id} run={current} name={project.name} />
+          )}
+          {QC_STEPS.includes(current.step) && current.status === 'done' && (
+            <QcPanel
+              key={`${current.step}-${current.finished_at}-${reloads}`}
+              projectId={id}
+              step={current.step}
+              disabled={busy}
+              onFixed={reload}
+            />
           )}
           {current.step === 'render' && current.status === 'done' && (
             <PublishPanel projectId={id} name={project.name} topic={project.topic} />

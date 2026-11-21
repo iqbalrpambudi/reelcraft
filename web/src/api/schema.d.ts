@@ -165,6 +165,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/qc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Qc
+         * @description Last quality report per checked step.
+         */
+        get: operations["get_qc_api_v1_projects__project_id__qc_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/qc/{step}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recheck */
+        post: operations["recheck_api_v1_projects__project_id__qc__step__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/script/fix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fix Script
+         * @description Repair what QC can without a person: labels, too long or too short sentences.
+         */
+        post: operations["fix_script_api_v1_projects__project_id__script_fix_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/timeline": {
         parameters: {
             query?: never;
@@ -709,6 +766,21 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** IssueOut */
+        IssueOut: {
+            /** Check */
+            check: string;
+            /** Severity */
+            severity: string;
+            /** Message */
+            message: string;
+            /** Segment */
+            segment: number | null;
+            /** Clip */
+            clip: number | null;
+            /** Fixable */
+            fixable: boolean;
+        };
         /** JobOut */
         JobOut: {
             /** Id */
@@ -888,6 +960,17 @@ export interface components {
             instructions?: string | null;
             /** Music */
             music?: string | null;
+        };
+        /** ReportOut */
+        ReportOut: {
+            /** Step */
+            step: string;
+            /** Issues */
+            issues: components["schemas"]["IssueOut"][];
+            /** Fixes */
+            fixes: string[];
+            /** Checked At */
+            checked_at: string;
         };
         /** RunIn */
         RunIn: {
@@ -1449,6 +1532,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScriptText"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_qc_api_v1_projects__project_id__qc_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["ReportOut"] | null;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recheck_api_v1_projects__project_id__qc__step__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                step: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fix_script_api_v1_projects__project_id__script_fix_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
                 };
             };
             /** @description Validation Error */
