@@ -41,7 +41,7 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Step Voice: audio narasi + timestamp per kata (faster-whisper, diselaraskan ke teks naskah)
 
 ## v0.6 Edit & Render
-- [ ] Step Edit: auto-match scene ke segmen narasi (port `matching.py`)
+- [x] Step Edit: auto-match scene ke segmen narasi (port inti `matching.py`: jendela shot, skor kata + durasi + urutan, heal; tanpa embedding/heatmap)
 - [ ] Subtitle karaoke ASS (pysubs2) + gaya subtitle
 - [ ] Library BGM per mood + auto-duck
 - [ ] Step Render: 9:16 via ffmpeg, background fill, watermark, render preview

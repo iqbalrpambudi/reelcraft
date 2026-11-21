@@ -16,6 +16,7 @@ const STEP_LABEL: Record<string, string> = {
   tag: 'Deskripsi AI',
   script: 'Naskah',
   voice: 'Suara',
+  edit: 'Susun klip',
 }
 const BUSY = ['reserved', 'queued', 'running']
 
