@@ -56,10 +56,10 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Pencarian footage multi-sumber: YouTube, Pexels, Pixabay, Archive.org (`reelcraft media find`)
 - [x] Filter (durasi, lisensi, sudah diimpor) dan impor multi-klip
 
-## v0.9 Publish & Autopilot
+## v0.9 Publish & Autopilot ✅
 - [x] Publish YouTube (OAuth + upload terjadwal)
 - [x] Publish Facebook Page Reels
-- [ ] Autopilot: pool video, jadwal produksi & slot posting (pilih penjadwal, lihat ADR 0002)
+- [x] Autopilot: pool video, jadwal produksi & slot posting (ADR 0003, `reelcraft autopilot`)
 
 ## v0.10 QC
 - [ ] Gate kualitas per step (port `qc.py`, dipecah per pemeriksaan)

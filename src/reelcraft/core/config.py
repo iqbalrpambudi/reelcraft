@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     youtube_client_secret: str | None = None
     facebook_app_id: str | None = None
     facebook_app_secret: str | None = None
+    autopilot: str | None = None
+    autopilot_niche: str | None = None
+    autopilot_production: str | None = None
+    autopilot_slots: str | None = None
+    autopilot_platforms: str | None = None
+    autopilot_pool: str | None = None
     openai_base_url: str | None = None
     text_model: str | None = None
     vision_model: str | None = None

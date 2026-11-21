@@ -9,7 +9,7 @@ v0.9 butuh kerja berkala: mengunggah post yang antre dan, untuk Autopilot, memul
 
 ## Keputusan
 
-- Satu thread `scheduler` di `serve`, di samping worker pipeline, yang menjalankan `tick()` tiap beberapa detik.
+- Dua thread di `serve`, di samping worker pipeline: satu mengunggah post yang antre, satu menjalankan Autopilot. Dipisah agar panggilan AI yang lambat tidak menahan upload. Keduanya berulang tiap beberapa detik.
 - Semua jadwal diturunkan dari data yang sudah ada (tabel `posts`, `projects`, setting Autopilot), bukan disimpan di antrean terpisah. Restart tidak kehilangan apa pun: tick berikutnya menghitung ulang.
 - Jadwal tayang diserahkan ke platform (`publishAt` YouTube, `scheduled_publish_time` Facebook). Video diunggah segera, sehingga komputer tidak perlu menyala tepat pada jam tayang.
 - Klaim post memakai `UPDATE ... WHERE status = 'queued'`, sehingga `reelcraft publish` di CLI dan server tidak mengunggah dua kali.

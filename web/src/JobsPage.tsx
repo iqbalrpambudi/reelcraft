@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { api, usePosts, useQueue, type Job } from './api/client'
+import { api, errorMessage, usePosts, useQueue, type Autopilot, type Job } from './api/client'
 import { STATUS_LABEL, STEP_LABEL } from './labels'
 import { PostList } from './Posts'
 
@@ -49,6 +49,8 @@ export function JobsPage() {
           </ol>
         )}
       </section>
+
+      <AutopilotPanel refreshKey={queueKey} />
 
       <section aria-labelledby="posts-title">
         <h2 id="posts-title">Posting</h2>
@@ -99,5 +101,78 @@ export function JobsPage() {
         )}
       </section>
     </>
+  )
+}
+
+const POOL_STATE: Record<string, string> = {
+  producing: 'diproduksi',
+  ready: 'siap, menunggu slot',
+  failed: 'gagal',
+}
+
+function AutopilotPanel({ refreshKey }: { refreshKey: string }) {
+  const [status, setStatus] = useState<Autopilot>()
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const load = () =>
+    api.GET('/api/v1/autopilot').then(({ data, error }) => {
+      setStatus(data)
+      if (error) setMessage(errorMessage(error))
+    })
+  useEffect(() => {
+    load()
+  }, [refreshKey])
+
+  const produce = async () => {
+    setBusy(true)
+    setMessage('Mencari ide dan footage...')
+    const { error } = await api.POST('/api/v1/autopilot/produce')
+    setBusy(false)
+    setMessage(error ? errorMessage(error) : 'Video baru masuk antrean.')
+    load()
+  }
+
+  return (
+    <section aria-labelledby="autopilot-title">
+      <div className="row">
+        <h2 id="autopilot-title">Autopilot</h2>
+        <button type="button" className="quiet" onClick={produce} disabled={busy}>
+          Buat video sekarang
+        </button>
+      </div>
+      {status && (
+        <>
+          <p className="small">
+            <strong>{status.enabled ? 'Aktif' : 'Mati'}</strong>
+            {' · '}
+            {status.platforms.length
+              ? `posting ke ${status.platforms.join(', ')}`
+              : 'belum ada akun terhubung'}
+            {status.enabled &&
+              status.next_production &&
+              ` · produksi berikutnya ${when(status.next_production)}`}
+            {' · '}
+            <Link to="/settings">atur</Link>
+          </p>
+          <p className="small muted">
+            Pool {status.pool.length}/{status.pool_size}
+            {status.free_slots.length > 0 &&
+              ` · slot kosong: ${status.free_slots.slice(0, 3).map(when).join(', ')}`}
+          </p>
+          {status.pool.length > 0 && (
+            <ol className="list">
+              {status.pool.map((item) => (
+                <li key={item.project_id} className="row">
+                  <Link to={`/projects/${item.project_id}`}>{item.name}</Link>
+                  <span className={`small job-${item.state}`}>{POOL_STATE[item.state]}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </>
+      )}
+      {message && <p role="status">{message}</p>}
+    </section>
   )
 }

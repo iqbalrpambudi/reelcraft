@@ -144,3 +144,14 @@ def test_cli_brief_and_script_editor(sample_video, monkeypatch, tmp_path):
     assert "Tidak ada perubahan" in cli(app, ["script", pid[:8]]).output
     monkeypatch.setenv("EDITOR", "false")
     assert cli(app, ["script", pid[:8]]).exit_code == 1
+
+
+def test_timeouts_are_transient_and_models_carry_a_limit():
+    from pydantic_ai.exceptions import ModelTimeoutError
+
+    with pytest.raises(ProviderUnavailable, match="tidak bisa dihubungi"), models.ai_errors():
+        raise ModelTimeoutError(model_name="m", message="ReadTimeout")
+    with session_scope() as s:
+        settings.put(s, "gemini_api_key", "k")
+        model = models.build(s, "google:gemini-flash-lite-latest")
+    assert (model.settings or {}).get("timeout") == models.TIMEOUT

@@ -1,10 +1,11 @@
 import io
 import wave
 
+import httpx
 from google import genai
 from google.genai import errors, types
 
-from reelcraft.ai.models import error_kind
+from reelcraft.ai.models import TIMEOUT, ProviderUnavailable, error_kind
 from reelcraft.core.errors import ReelcraftError
 from reelcraft.storage import settings
 from reelcraft.storage.db import session_scope
@@ -35,11 +36,14 @@ def _gemini(key: str, model: str, voice: str, text: str) -> bytes:
             )
         ),
     )
-    client = genai.Client(api_key=key)  # kept in a name: a dropped Client closes its connection
+    # Kept in a name: a dropped Client closes its connection. Timeout is in milliseconds.
+    client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=TIMEOUT * 1000))
     try:
         response = client.models.generate_content(model=model, contents=text, config=config)
     except errors.APIError as e:
         raise error_kind(e.code)(f"TTS menolak permintaan ({e.code}): {e.message}") from e
+    except httpx.TransportError as e:  # timeouts included
+        raise ProviderUnavailable(f"TTS tidak bisa dihubungi: {e}") from e
     parts = (response.candidates or [None])[0]
     for part in (parts and parts.content and parts.content.parts) or []:
         if part.inline_data and part.inline_data.data:

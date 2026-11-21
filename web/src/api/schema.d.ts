@@ -497,6 +497,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/autopilot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Autopilot
+         * @description Pool, upcoming production and free posting slots.
+         */
+        get: operations["get_autopilot_api_v1_autopilot_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autopilot/produce": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Produce Now
+         * @description Make one video now, outside the production times. Takes a few seconds (AI + search).
+         */
+        post: operations["produce_now_api_v1_autopilot_produce_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -612,6 +652,21 @@ export interface components {
             /** Message */
             message: string | null;
         };
+        /** AutopilotOut */
+        AutopilotOut: {
+            /** Enabled */
+            enabled: boolean;
+            /** Platforms */
+            platforms: string[];
+            /** Pool */
+            pool: components["schemas"]["PoolItem"][];
+            /** Pool Size */
+            pool_size: number;
+            /** Next Production */
+            next_production: string | null;
+            /** Free Slots */
+            free_slots: string[];
+        };
         /** Body_upload_media_api_v1_projects__project_id__media_upload_post */
         Body_upload_media_api_v1_projects__project_id__media_upload_post: {
             /** File */
@@ -723,6 +778,15 @@ export interface components {
         OrderIn: {
             /** Order */
             order: number[];
+        };
+        /** PoolItem */
+        PoolItem: {
+            /** Project Id */
+            project_id: string;
+            /** Name */
+            name: string;
+            /** State */
+            state: string;
         };
         /** PostIn */
         PostIn: {
@@ -1984,6 +2048,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_autopilot_api_v1_autopilot_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutopilotOut"];
+                };
+            };
+        };
+    };
+    produce_now_api_v1_autopilot_produce_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
                 };
             };
         };

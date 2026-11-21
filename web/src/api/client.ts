@@ -18,6 +18,7 @@ export type Job = Schemas['JobOut']
 export type Footage = Schemas['FootageOut']
 export type Account = Schemas['AccountOut']
 export type Post = Schemas['PostOut']
+export type Autopilot = Schemas['AutopilotOut']
 
 /** URL of a file inside a project's data dir (thumbnails, media, renders). */
 export const fileUrl = (projectId: string, path: string) =>

@@ -21,6 +21,7 @@ class Project(Base):
     template: Mapped[str] = mapped_column(String(40), default="fakta")  # preset key
     instructions: Mapped[str | None] = mapped_column(Text)  # custom, added to the preset
     music: Mapped[str | None] = mapped_column(String(100))  # mood folder; None = no music
+    autopilot: Mapped[bool] = mapped_column(Boolean, default=False)  # made by, and posted by, it
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
 

@@ -22,6 +22,7 @@ app.command()(pipeline.script)
 app.command()(pipeline.jobs)
 app.command()(publish.publish)
 app.command()(publish.posts)
+app.command()(publish.autopilot)
 
 
 def _print_version(value: bool) -> None:

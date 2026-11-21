@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from reelcraft.api.deps import get_session
 from reelcraft.core.errors import ReelcraftError
-from reelcraft.services import publishing
+from reelcraft.services import autopilot, publishing
+from reelcraft.services.autopilot import AutopilotOut
 from reelcraft.services.publishing import AccountOut, PostIn, PostOut
 
 router = APIRouter(tags=["publish"])
@@ -73,3 +74,15 @@ def retry_post(post_id: str, db: Db) -> None:
 @router.delete("/posts/{post_id}", status_code=204)
 def cancel_post(post_id: str, db: Db) -> None:
     publishing.cancel(db, post_id)
+
+
+@router.get("/autopilot")
+def get_autopilot(db: Db) -> AutopilotOut:
+    """Pool, upcoming production and free posting slots."""
+    return autopilot.status(db)
+
+
+@router.post("/autopilot/produce", status_code=201)
+def produce_now(db: Db) -> dict[str, str]:
+    """Make one video now, outside the production times. Takes a few seconds (AI + search)."""
+    return {"project_id": autopilot.produce(autopilot.config(db).niche)}

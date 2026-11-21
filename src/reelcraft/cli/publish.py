@@ -7,6 +7,7 @@ from rich.table import Table
 
 from reelcraft.cli.common import ProjectId, user_errors
 from reelcraft.core.errors import ReelcraftError
+from reelcraft.services import autopilot as autopilot_service
 from reelcraft.services import projects, publishing
 from reelcraft.services.publishing import PostIn
 from reelcraft.storage.db import session_scope
@@ -91,3 +92,33 @@ def posts(
         status = f"{p.status} {p.progress}%" if p.status == "uploading" else p.status
         table.add_row(when, p.project_name, p.platform, status, p.error or p.url or "")
     console.print(table)
+
+
+def autopilot(
+    now: Annotated[bool, typer.Option("--now", help="Buat satu video sekarang.")] = False,
+) -> None:
+    """Status Autopilot: pool, jadwal produksi, slot kosong. Atur di `reelcraft config`."""
+    with user_errors():
+        if now:
+            with session_scope() as s:
+                niche = autopilot_service.config(s).niche
+            pid = autopilot_service.produce(niche)
+            console.print(
+                f"Project [dim]{pid[:8]}[/dim] dibuat dan antre; server (`reelcraft serve`) "
+                "yang menjalankannya."
+            )
+        with session_scope() as s:
+            st = autopilot_service.status(s)
+    fmt = "%a %d %b %H:%M"
+    console.print(
+        f"Autopilot [bold]{'ON' if st.enabled else 'OFF'}[/bold] · platform: "
+        f"{', '.join(st.platforms) or 'belum ada akun terhubung'}"
+    )
+    if st.next_production:
+        console.print(f"Produksi berikutnya: {st.next_production:{fmt}}")
+    console.print(f"Pool {len(st.pool)}/{st.pool_size}:")
+    for item in st.pool:
+        console.print(f"  {item.project_id[:8]}  {item.state:<9}  {item.name}")
+    console.print(
+        "Slot kosong: " + (", ".join(f"{s.astimezone():{fmt}}" for s in st.free_slots) or "-")
+    )

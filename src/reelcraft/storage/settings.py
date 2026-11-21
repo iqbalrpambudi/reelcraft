@@ -55,6 +55,42 @@ SPECS: dict[str, Spec] = {
         ),
         Spec("facebook_app_secret", "Facebook App secret", secret=True),
         Spec(
+            "autopilot",
+            "Autopilot",
+            default="off",
+            help="on: bikin video sendiri pada jam produksi dan posting ke slot. off: mati.",
+        ),
+        Spec(
+            "autopilot_niche",
+            "Niche Autopilot",
+            default="Fakta unik seputar kerajinan, proses pembuatan, pertanian, dan industri.",
+            help="Tema channel; AI memilih ide di dalamnya.",
+        ),
+        Spec(
+            "autopilot_production",
+            "Jam produksi",
+            default="12:00,18:00",
+            help="Jam (HH:MM, waktu komputer ini) saat satu video baru mulai dibuat.",
+        ),
+        Spec(
+            "autopilot_slots",
+            "Slot posting",
+            default="07:00,17:00",
+            help="Jam tayang harian (HH:MM). Video jadi mengisi slot kosong terdekat.",
+        ),
+        Spec(
+            "autopilot_platforms",
+            "Platform Autopilot",
+            default="youtube",
+            help="youtube, facebook, atau keduanya dipisah koma. Akun harus terhubung.",
+        ),
+        Spec(
+            "autopilot_pool",
+            "Ukuran pool",
+            default="4",
+            help="Maksimal video yang dibuat tapi belum dijadwalkan; produksi berhenti saat penuh.",
+        ),
+        Spec(
             "openai_base_url",
             "OpenAI-compatible base URL",
             help="Kosongkan untuk api.openai.com; isi untuk OpenRouter, Ollama, LM Studio, dll.",
