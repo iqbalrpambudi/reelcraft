@@ -1,8 +1,8 @@
-import logging
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
+import structlog
 from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -16,7 +16,7 @@ from reelcraft.storage.db import session_scope, utcnow
 from reelcraft.storage.files import project_file
 from reelcraft.storage.models import Account, Post, Project, StepRun
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 Platform = Literal["youtube", "facebook"]
 PLATFORMS: tuple[Platform, ...] = ("youtube", "facebook")
 CREDENTIALS = {
@@ -216,8 +216,11 @@ def upload(post_id: str | None = None) -> PostOut | None:
     except ReelcraftError as e:
         error = str(e)
     except Exception as e:  # network errors and the like: keep the post, say what happened
-        log.exception("Upload %s failed", post_id)
+        log.exception("upload.crashed", post=post_id)
         error = f"{type(e).__name__}: {e}"
+    (log.warning if error else log.info)(
+        "upload", post=post_id, project=project_id, platform=platform, url=url, error=error
+    )
     with session_scope() as s:
         post = s.get(Post, post_id)
         if post:

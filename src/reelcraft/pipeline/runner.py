@@ -1,5 +1,7 @@
+import time
 from collections.abc import Callable
 
+import structlog
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,8 @@ from reelcraft.pipeline.steps import analyze, edit, ingest, render, script, tag,
 from reelcraft.storage.db import session_scope, utcnow
 from reelcraft.storage.files import project_dir
 from reelcraft.storage.models import Job, Project, StepRun
+
+log = structlog.get_logger(__name__)
 
 # Order is the pipeline; later milestones append publish
 STEPS: dict[str, Callable[[StepContext], None]] = {
@@ -150,6 +154,7 @@ def _execute(
                 job.step = step
         ctx = StepContext(project_id, step, project_dir(project_id), listener)
         error = None
+        began = time.monotonic()
         try:
             STEPS[step](ctx)
             qc.gate(step, ctx.dir)
@@ -165,6 +170,10 @@ def _execute(
         else:
             status = "done"
         _finish(project_id, step, status, error)
+        (log.warning if error else log.info)(
+            "step", project=project_id, step=step, status=status, error=error,
+            seconds=round(time.monotonic() - began, 1),
+        )  # fmt: skip
         if listener:
             listener(step, 100 if status == "done" else -1, error or status)
         if status != "done":

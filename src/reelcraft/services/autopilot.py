@@ -3,13 +3,13 @@ videos wait in a pool and take the next free posting slot. State lives in projec
 so a restart loses nothing (ADR 0003)."""
 
 import asyncio
-import logging
 import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from datetime import time as clock
 
+import structlog
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -24,7 +24,7 @@ from reelcraft.storage import script, settings
 from reelcraft.storage.db import session_scope
 from reelcraft.storage.models import Account, Post, Project, StepRun
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 CLIPS = 3  # footage per video
 SLOT_LEAD = timedelta(minutes=15)  # time to upload before a slot
 SLOT_DAYS = 3  # how far ahead slots are filled
@@ -198,7 +198,7 @@ def produce(niche: str) -> str:
             s.delete(s.get(Project, pid))
         raise
     runner.claim(pid, None, None, queue=True)
-    log.info("Autopilot started %s: %s", pid, idea.title)
+    log.info("autopilot.produced", project=pid, title=idea.title, query=idea.query)
     return pid
 
 

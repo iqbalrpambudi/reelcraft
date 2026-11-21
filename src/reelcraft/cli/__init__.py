@@ -8,8 +8,9 @@ import uvicorn
 
 from reelcraft import __version__
 from reelcraft.api.app import STATIC_DIR, create_app
-from reelcraft.cli import config, media, pipeline, project, publish, service
+from reelcraft.cli import config, logs, media, pipeline, project, publish, service
 from reelcraft.core.config import get_settings
+from reelcraft.core.logs import setup as setup_logging
 from reelcraft.media.tools import REQUIRED_TOOLS
 
 app = typer.Typer(help="Reelcraft: a production line for short-form video.", no_args_is_help=True)
@@ -25,6 +26,7 @@ app.command()(pipeline.qc)
 app.command()(publish.publish)
 app.command()(publish.posts)
 app.command()(publish.autopilot)
+app.command()(logs.logs)
 
 
 def _print_version(value: bool) -> None:
@@ -42,7 +44,7 @@ def main(
         ),
     ] = False,
 ) -> None:
-    pass
+    setup_logging()
 
 
 @app.command()
@@ -64,7 +66,9 @@ def serve(
     elif open_browser:
         threading.Timer(1.0, webbrowser.open, [url]).start()  # after uvicorn is listening
     typer.echo(f"Reelcraft {__version__} at {url}")
-    uvicorn.run(create_app(), host=host, port=port, log_level="info")
+    setup_logging(console=True)
+    # log_config=None: uvicorn's records go through the handlers above instead of its own
+    uvicorn.run(create_app(), host=host, port=port, log_config=None)
 
 
 @app.command()
