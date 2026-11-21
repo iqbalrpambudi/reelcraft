@@ -13,6 +13,7 @@ from rich.table import Table
 from reelcraft.cli.common import ProjectId, user_errors
 from reelcraft.core.errors import ReelcraftError
 from reelcraft.pipeline import runner
+from reelcraft.services import jobs as job_service
 from reelcraft.services import pipeline, projects, scripts
 from reelcraft.storage.db import session_scope
 
@@ -112,3 +113,30 @@ def _edit(text: str) -> str:
         if subprocess.run([*editor, str(path)]).returncode != 0:
             raise ReelcraftError("Editor keluar dengan error; naskah tidak disimpan.")
         return path.read_text()
+
+
+def jobs(
+    limit: Annotated[int, typer.Option(help="Jumlah riwayat yang ditampilkan.")] = 15,
+) -> None:
+    """Antrean semua project dan riwayat run terakhir."""
+    with session_scope() as s:
+        active = job_service.queue(s)
+        past = job_service.history(s, limit)
+    if active:
+        table = Table("Project", "Step", "Status", "Progress", title="Antrean")
+        for a in active:
+            table.add_row(a.project_name, a.step, a.status, f"{a.progress}%")
+        console.print(table)
+    else:
+        console.print("Antrean kosong.")
+    table = Table("Mulai", "Project", "Step", "Status", "Keterangan", title="Riwayat")
+    for j in past:
+        style = STATUS_STYLE.get(j.status, "")
+        table.add_row(
+            j.started_at.astimezone().strftime("%m-%d %H:%M"),
+            j.project_name,
+            f"{j.steps[0]}..{j.steps[-1]}" if len(j.steps) > 1 else j.steps[0],
+            f"[{style}]{j.status}[/{style}]" if style else j.status,
+            f"di {j.step}: {j.error}" if j.error else "",
+        )
+    console.print(table)

@@ -81,6 +81,23 @@ class StepRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
 
+class Job(Base):
+    """One execution of a range of steps (CLI or server worker): the run history."""
+
+    __tablename__ = "jobs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    steps: Mapped[list[str]] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(20), default="running")  # then done/failed/cancelled
+    step: Mapped[str | None] = mapped_column(String(20))  # the one running, or where it ended
+    error: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+
 class Setting(Base):
     """A value saved from the web or CLI; secrets are stored encrypted."""
 

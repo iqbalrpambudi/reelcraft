@@ -275,6 +275,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Queue
+         * @description Steps running or waiting, across all projects.
+         */
+        get: operations["get_queue_api_v1_queue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Jobs
+         * @description Past and current runs, newest first.
+         */
+        get: operations["list_jobs_api_v1_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -361,6 +401,21 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** ActiveStep */
+        ActiveStep: {
+            /** Project Id */
+            project_id: string;
+            /** Project Name */
+            project_name: string;
+            /** Step */
+            step: string;
+            /** Status */
+            status: string;
+            /** Progress */
+            progress: number;
+            /** Message */
+            message: string | null;
+        };
         /** Body_upload_media_api_v1_projects__project_id__media_upload_post */
         Body_upload_media_api_v1_projects__project_id__media_upload_post: {
             /** File */
@@ -370,6 +425,30 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** JobOut */
+        JobOut: {
+            /** Id */
+            id: string;
+            /** Project Id */
+            project_id: string;
+            /** Project Name */
+            project_name: string;
+            /** Steps */
+            steps: string[];
+            /** Status */
+            status: string;
+            /** Step */
+            step: string | null;
+            /** Error */
+            error: string | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
         };
         /** MediaIn */
         MediaIn: {
@@ -1250,6 +1329,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AICheck"][];
+                };
+            };
+        };
+    };
+    get_queue_api_v1_queue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveStep"][];
+                };
+            };
+        };
+    };
+    list_jobs_api_v1_jobs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

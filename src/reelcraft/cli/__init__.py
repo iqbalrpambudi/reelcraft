@@ -19,6 +19,7 @@ app.add_typer(config.app, name="config")
 app.command()(pipeline.run)
 app.command()(pipeline.status)
 app.command()(pipeline.script)
+app.command()(pipeline.jobs)
 
 
 def _print_version(value: bool) -> None:

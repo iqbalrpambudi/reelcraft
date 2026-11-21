@@ -47,10 +47,10 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Step Preview: render setengah resolusi, cepat, sebelum render final
 - [x] Web: pratinjau timeline & ubah urutan klip, pengaturan subtitle (halaman Settings)
 
-## v0.7 Dashboard
+## v0.7 Dashboard ✅
 - [x] Workflow segment lengkap: buka tiap segment, lihat & edit artifact, "jalankan ulang dari sini"
 - [x] Player video/audio untuk hasil tiap step
-- [ ] Indikator antrean global dan riwayat job
+- [x] Indikator antrean global dan riwayat job (halaman Jobs, `reelcraft jobs`)
 
 ## v0.8 Discovery
 - [ ] Pencarian footage multi-sumber: YouTube, Pexels, Pixabay, Archive.org

@@ -9,7 +9,7 @@ from starlette.exceptions import HTTPException
 from starlette.types import Scope
 
 from reelcraft import __version__
-from reelcraft.api import pipeline, projects, settings
+from reelcraft.api import jobs, pipeline, projects, settings
 from reelcraft.core.errors import NotFound, ReelcraftError
 from reelcraft.pipeline import runner, worker
 from reelcraft.services import projects as project_service
@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api/v1")
 router.include_router(projects.router)
 router.include_router(pipeline.router)
 router.include_router(settings.router)
+router.include_router(jobs.router)
 
 
 @router.get("/health")

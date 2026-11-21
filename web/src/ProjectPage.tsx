@@ -10,26 +10,8 @@ import {
   type StepRun,
   type Timeline,
 } from './api/client'
+import { STATUS_LABEL, STEP_LABEL } from './labels'
 
-const STEP_LABEL: Record<string, string> = {
-  ingest: 'Ambil media',
-  analyze: 'Analisis scene',
-  tag: 'Deskripsi AI',
-  script: 'Naskah',
-  voice: 'Suara',
-  edit: 'Susun klip',
-  preview: 'Pratinjau',
-  render: 'Render',
-}
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'belum',
-  reserved: 'disiapkan',
-  queued: 'antre',
-  running: 'berjalan',
-  done: 'selesai',
-  failed: 'gagal',
-  cancelled: 'dibatalkan',
-}
 const BUSY = ['reserved', 'queued', 'running']
 
 const formatTime = (sec: number) =>

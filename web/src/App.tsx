@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Route, Routes } from 'react-router'
-import { api } from './api/client'
+import { api, useQueue } from './api/client'
+import { JobsPage } from './JobsPage'
 import { ProjectPage } from './ProjectPage'
 import { Projects } from './Projects'
 import { SettingsPage } from './SettingsPage'
@@ -19,7 +20,8 @@ export default function App() {
           Reelcraft
         </Link>
         {version && <span className="muted small">v{version}</span>}
-        <nav>
+        <nav className="row">
+          <QueueIndicator />
           <Link to="/settings">Settings</Link>
         </nav>
       </header>
@@ -27,8 +29,20 @@ export default function App() {
         <Route path="/" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/jobs" element={<JobsPage />} />
         <Route path="*" element={<p>Halaman tidak ditemukan.</p>} />
       </Routes>
     </main>
+  )
+}
+
+function QueueIndicator() {
+  const queue = useQueue()
+  const running = queue.filter((q) => q.status === 'running').length
+  const waiting = queue.length - running
+  return (
+    <Link to="/jobs" className={running ? 'queue-busy' : 'muted'}>
+      {queue.length === 0 ? 'Jobs' : `${running} berjalan · ${waiting} antre`}
+    </Link>
   )
 }

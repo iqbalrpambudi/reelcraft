@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import createClient from 'openapi-fetch'
 import type { components, paths } from './schema'
 
@@ -12,6 +13,8 @@ export type StepRun = Schemas['StepRunOut']
 export type SettingItem = Schemas['SettingOut']
 export type AICheck = Schemas['AICheck']
 export type Timeline = Schemas['Timeline']
+export type ActiveStep = Schemas['ActiveStep']
+export type Job = Schemas['JobOut']
 
 /** URL of a file inside a project's data dir (thumbnails, media, renders). */
 export const fileUrl = (projectId: string, path: string) =>
@@ -23,4 +26,25 @@ export function errorMessage(error: unknown): string {
   if (typeof detail === 'string') return detail
   if (Array.isArray(detail)) return detail.map((d: { msg: string }) => d.msg).join(', ')
   return 'Terjadi kesalahan'
+}
+
+const QUEUE_POLL_MS = 3000
+
+/** Steps running or waiting across all projects, refreshed every few seconds. */
+export function useQueue(): ActiveStep[] {
+  const [queue, setQueue] = useState<ActiveStep[]>([])
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      api.GET('/api/v1/queue').then(({ data }) => {
+        if (alive && data) setQueue(data)
+      })
+    load()
+    const timer = setInterval(load, QUEUE_POLL_MS)
+    return () => {
+      alive = false
+      clearInterval(timer)
+    }
+  }, [])
+  return queue
 }

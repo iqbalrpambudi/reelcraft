@@ -279,3 +279,19 @@ video.result {
 .settings + .field {
   margin-top: 24px;
 }
+
+.queue-busy {
+  font-weight: 600;
+}
+
+.job-done {
+  color: #16a34a;
+}
+
+.job-failed {
+  color: var(--danger);
+}
+
+.job-when {
+  text-align: right;
+}

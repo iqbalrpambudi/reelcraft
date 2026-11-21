@@ -8,7 +8,7 @@ from reelcraft.pipeline.context import Cancelled, Listener, StepContext
 from reelcraft.pipeline.steps import analyze, edit, ingest, render, script, tag, voice
 from reelcraft.storage.db import session_scope, utcnow
 from reelcraft.storage.files import project_dir
-from reelcraft.storage.models import Project, StepRun
+from reelcraft.storage.models import Job, Project, StepRun
 
 # Order is the pipeline; later milestones append publish
 STEPS: dict[str, Callable[[StepContext], None]] = {
@@ -115,14 +115,38 @@ def next_queued() -> tuple[str, list[str]] | None:
 
 
 def execute(project_id: str, steps: list[str], listener: Listener | None = None) -> str:
-    """Run claimed steps in order; stops at the first failure. Returns the final status."""
-    status = "done"
+    """Run claimed steps in order, recorded as one job; stops at the first failure.
+    Returns the final status."""
+    with session_scope() as s:
+        job = Job(project_id=project_id, steps=steps)
+        s.add(job)
+        s.flush()
+        job_id = job.id
+    status, error = "cancelled", None  # what stays if Ctrl+C cuts it short
+    try:
+        status, error = _execute(project_id, steps, listener, job_id)
+    finally:
+        with session_scope() as s:
+            job = s.get(Job, job_id)
+            if job:  # gone if the project was deleted meanwhile
+                job.status, job.error, job.finished_at = status, error, utcnow()
+    return status
+
+
+def _execute(
+    project_id: str, steps: list[str], listener: Listener | None, job_id: str
+) -> tuple[str, str | None]:
+    """Final status and the error of the step it ended on."""
+    status, error = "done", None
     for i, step in enumerate(steps):
         with session_scope() as s:
             run = s.get(StepRun, (project_id, step))
             assert run is not None
             run.status, run.progress, run.message, run.error = "running", 0, None, None
             run.cancel_requested, run.started_at, run.finished_at = False, utcnow(), None
+            job = s.get(Job, job_id)
+            if job:
+                job.step = step
         ctx = StepContext(project_id, step, project_dir(project_id), listener)
         error = None
         try:
@@ -144,7 +168,7 @@ def execute(project_id: str, steps: list[str], listener: Listener | None = None)
         if status != "done":
             _release(project_id, steps[i + 1 :])
             break
-    return status
+    return status, error
 
 
 def run(
@@ -179,6 +203,11 @@ def recover_interrupted() -> None:
         s.execute(
             update(StepRun)
             .where(StepRun.status == "running")
+            .values(status="failed", error="Terhenti karena proses berhenti", finished_at=utcnow())
+        )
+        s.execute(
+            update(Job)
+            .where(Job.status == "running")
             .values(status="failed", error="Terhenti karena proses berhenti", finished_at=utcnow())
         )
         s.execute(
