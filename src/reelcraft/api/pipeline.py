@@ -10,9 +10,10 @@ from sqlalchemy.orm import Session
 
 from reelcraft.api.deps import get_session
 from reelcraft.pipeline import runner
-from reelcraft.services import media, pipeline
+from reelcraft.services import media, pipeline, scripts
 from reelcraft.services.media import MediaOut, SceneOut
 from reelcraft.services.pipeline import StepRunOut
+from reelcraft.services.scripts import ScriptText
 from reelcraft.storage.db import session_scope
 from reelcraft.storage.files import project_file
 
@@ -24,6 +25,10 @@ HEARTBEAT_SECONDS = 15
 
 class MediaIn(BaseModel):
     source: str  # URL, or a path on the machine running the server
+
+
+class ScriptIn(BaseModel):
+    text: str
 
 
 class RunIn(BaseModel):
@@ -54,6 +59,16 @@ def remove_media(project_id: str, media_id: str, db: Db) -> None:
 @router.get("/scenes")
 def list_scenes(project_id: str, db: Db) -> list[SceneOut]:
     return media.scenes_for(db, project_id)
+
+
+@router.get("/script")
+def get_script(project_id: str, db: Db) -> ScriptText:
+    return scripts.get(db, project_id)
+
+
+@router.put("/script")
+def save_script(project_id: str, data: ScriptIn, db: Db) -> ScriptText:
+    return scripts.save(db, project_id, data.text)
 
 
 @router.get("/steps")

@@ -12,6 +12,7 @@ from reelcraft import __version__
 from reelcraft.api import pipeline, projects, settings
 from reelcraft.core.errors import NotFound, ReelcraftError
 from reelcraft.pipeline import runner, worker
+from reelcraft.services import projects as project_service
 from reelcraft.storage.db import get_engine
 
 # The web build lands here (see web/vite.config.ts) and ships inside the wheel
@@ -26,6 +27,11 @@ router.include_router(settings.router)
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@router.get("/templates")
+def list_templates() -> dict[str, str]:
+    return project_service.templates()
 
 
 @router.get("/version")

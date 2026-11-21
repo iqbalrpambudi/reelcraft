@@ -28,11 +28,11 @@ def test_upload_run_and_browse_results(client, sample_video):
 
     queued = client.post(f"{base}/run", json={})
     assert queued.status_code == 202
-    assert [s["status"] for s in queued.json()] == ["queued"] * 3
+    assert [s["status"] for s in queued.json()] == ["queued"] * 5
     assert client.post(f"{base}/run", json={}).status_code == 400  # already busy
 
     assert worker.run_next()
-    assert [s["status"] for s in client.get(f"{base}/steps").json()] == ["done"] * 3
+    assert [s["status"] for s in client.get(f"{base}/steps").json()] == ["done"] * 5
     [m] = client.get(f"{base}/media").json()
     assert m["status"] == "ready" and m["scene_count"] == 2
     assert not any((project_dir(pid) / UPLOADS).iterdir())  # moved into media/, not copied
@@ -64,6 +64,8 @@ def test_events_stream_starts_with_current_steps(client):
         "ingest",
         "analyze",
         "tag",
+        "script",
+        "voice",
     ]
     assert client.get("/api/v1/projects/nope/events").status_code == 404
 

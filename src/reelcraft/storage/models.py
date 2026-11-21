@@ -16,6 +16,10 @@ class Project(Base):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
     name: Mapped[str] = mapped_column(String(200))
+    # Brief for the Script step: what the video is about and how to tell it
+    topic: Mapped[str | None] = mapped_column(Text)
+    template: Mapped[str] = mapped_column(String(40), default="fakta")  # preset key
+    instructions: Mapped[str | None] = mapped_column(Text)  # custom, added to the preset
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
 

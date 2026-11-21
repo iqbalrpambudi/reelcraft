@@ -1,5 +1,6 @@
 import os
-from collections.abc import Iterator
+import time
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from typing import Literal
 
@@ -16,6 +17,8 @@ from reelcraft.storage import settings
 from reelcraft.storage.db import session_scope
 
 Task = Literal["text", "vision"]
+# Seconds before each retry of a 5xx; "overloaded" came in bursts of tens of seconds when tested
+RETRY_WAITS = (5, 15, 45)
 
 # pydantic-ai prints an observability banner on first run; it would land in CLI output
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
@@ -56,6 +59,12 @@ def model_for(task: Task) -> Model:
         return build(s, spec)
 
 
+def error_kind(status: int) -> type[ReelcraftError]:
+    if status == 429:
+        return QuotaExceeded
+    return ProviderUnavailable if status >= 500 else ReelcraftError
+
+
 @contextmanager
 def ai_errors() -> Iterator[None]:
     """Provider failures as one readable line instead of an SDK traceback."""
@@ -65,13 +74,17 @@ def ai_errors() -> Iterator[None]:
         body = e.body if isinstance(e.body, dict) else {}
         detail = (body.get("error") or {}).get("message") if body else None
         message = f"AI menolak permintaan ({e.status_code}): {detail or e.message}"
-        kind = (
-            QuotaExceeded
-            if e.status_code == 429
-            else ProviderUnavailable
-            if e.status_code >= 500
-            else ReelcraftError
-        )
-        raise kind(message) from e
+        raise error_kind(e.status_code)(message) from e
     except UnexpectedModelBehavior as e:
         raise ReelcraftError(f"Jawaban AI tidak sesuai format: {e}") from e
+
+
+def retrying[T](call: Callable[[], T]) -> T:
+    """`call()`, retried after a pause while the provider is overloaded (5xx); other errors
+    (bad key, quota, bad output) are raised right away since retrying won't help."""
+    for wait in RETRY_WAITS:
+        try:
+            return call()
+        except ProviderUnavailable:
+            time.sleep(wait)
+    return call()

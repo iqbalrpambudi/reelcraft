@@ -47,6 +47,24 @@ SPECS: dict[str, Spec] = {
             default="google:gemini-flash-lite-latest",
             help="Format provider:model. Dipakai untuk mendeskripsikan scene.",
         ),
+        Spec(
+            "tts_model",
+            "Model suara (TTS)",
+            default="google:gemini-3.8-flash-tts",
+            help="Format provider:model. Saat ini provider = google.",
+        ),
+        Spec(
+            "tts_voice",
+            "Suara TTS",
+            default="Kore",
+            help="Nama voice Gemini, mis. Kore, Puck, Charon, Aoede.",
+        ),
+        Spec(
+            "whisper_model",
+            "Model faster-whisper",
+            default="small",
+            help="Untuk timestamp per kata: tiny, base, small, medium, large-v3. Diunduh sekali.",
+        ),
     ]
 }
 

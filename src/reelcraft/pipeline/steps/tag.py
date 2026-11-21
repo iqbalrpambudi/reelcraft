@@ -3,7 +3,7 @@ from itertools import batched
 
 from sqlalchemy import select
 
-from reelcraft.ai.models import ProviderUnavailable, model_for
+from reelcraft.ai.models import RETRY_WAITS, ProviderUnavailable, model_for
 from reelcraft.ai.tagging import describe
 from reelcraft.core.errors import ReelcraftError
 from reelcraft.pipeline.context import StepContext
@@ -12,9 +12,6 @@ from reelcraft.storage.models import Media, Scene
 
 BATCH = 8  # images per request: fewer calls, same quality
 CONCURRENCY = 3
-# Seconds before each retry of a batch the provider was too busy for (503 "overloaded" came
-# in bursts of tens of seconds when tested); other errors are not retried
-RETRY_WAITS = (5, 15, 45)
 
 
 def run(ctx: StepContext) -> None:

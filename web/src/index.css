@@ -39,6 +39,8 @@ header {
 }
 
 input,
+select,
+textarea,
 button {
   font: inherit;
   padding: 8px 12px;
@@ -46,6 +48,16 @@ button {
   border: 1px solid var(--border);
   background: transparent;
   color: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+audio {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
 }
 
 input {

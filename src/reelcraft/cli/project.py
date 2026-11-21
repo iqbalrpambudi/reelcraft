@@ -22,6 +22,9 @@ def _local(dt: datetime) -> str:
 
 def _show(p: ProjectOut) -> None:
     console.print(f"[bold]{p.name}[/bold]  [dim]{p.id}[/dim]  dibuat {_local(p.created_at)}")
+    console.print(f"  topik: {p.topic or '-'}  template: {p.template}")
+    if p.instructions:
+        console.print(f"  instruksi: {p.instructions}")
 
 
 def _validated[T](model: type[T], **data: object) -> T:
@@ -79,3 +82,22 @@ def delete(
             typer.confirm(f"Hapus project '{p.name}'?", abort=True)
         projects.delete(s, p.id)
     console.print(f"Project '{p.name}' dihapus.")
+
+
+@app.command("brief")
+def brief(
+    project_id: ProjectId,
+    topic: Annotated[str | None, typer.Option(help='Topik video. "" untuk mengosongkan.')] = None,
+    template: Annotated[
+        str | None, typer.Option(help=f"Gaya narasi: {', '.join(projects.templates())}.")
+    ] = None,
+    instructions: Annotated[
+        str | None, typer.Option(help='Instruksi tambahan untuk naskah. "" untuk menghapus.')
+    ] = None,
+) -> None:
+    """Atur bahan naskah: topik, template, instruksi. Tanpa opsi: tampilkan."""
+    given = {"topic": topic, "template": template, "instructions": instructions}
+    with user_errors(), session_scope() as s:
+        pid = projects.resolve_id(s, project_id)
+        data = ProjectUpdate(**{k: v for k, v in given.items() if v is not None})
+        _show(projects.update(s, pid, data) if data.model_fields_set else projects.get(s, pid))

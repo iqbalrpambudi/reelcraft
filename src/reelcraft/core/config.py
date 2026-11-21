@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     openai_base_url: str | None = None
     text_model: str | None = None
     vision_model: str | None = None
+    tts_model: str | None = None
+    tts_voice: str | None = None
+    whisper_model: str | None = None
 
     @property
     def database_url(self) -> str:

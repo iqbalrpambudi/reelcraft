@@ -18,6 +18,7 @@ app.add_typer(media.app, name="media")
 app.add_typer(config.app, name="config")
 app.command()(pipeline.run)
 app.command()(pipeline.status)
+app.command()(pipeline.script)
 
 
 def _print_version(value: bool) -> None:

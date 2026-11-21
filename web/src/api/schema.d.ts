@@ -110,6 +110,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/script": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Script */
+        get: operations["get_script_api_v1_projects__project_id__script_get"];
+        /** Save Script */
+        put: operations["save_script_api_v1_projects__project_id__script_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/steps": {
         parameters: {
             query?: never;
@@ -256,6 +274,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Templates */
+        get: operations["list_templates_api_v1_templates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/version": {
         parameters: {
             query?: never;
@@ -348,6 +383,12 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** Topic */
+            topic: string | null;
+            /** Template */
+            template: string;
+            /** Instructions */
+            instructions: string | null;
             /**
              * Created At
              * Format: date-time
@@ -359,10 +400,19 @@ export interface components {
              */
             updated_at: string;
         };
-        /** ProjectUpdate */
+        /**
+         * ProjectUpdate
+         * @description Only the fields sent change; null clears topic or instructions.
+         */
         ProjectUpdate: {
             /** Name */
             name?: string | null;
+            /** Topic */
+            topic?: string | null;
+            /** Template */
+            template?: string | null;
+            /** Instructions */
+            instructions?: string | null;
         };
         /** RunIn */
         RunIn: {
@@ -391,6 +441,16 @@ export interface components {
             tags: string[] | null;
             /** Tag Error */
             tag_error: string | null;
+        };
+        /** ScriptIn */
+        ScriptIn: {
+            /** Text */
+            text: string;
+        };
+        /** ScriptText */
+        ScriptText: {
+            /** Text */
+            text: string | null;
         };
         /** SettingOut */
         SettingOut: {
@@ -761,6 +821,72 @@ export interface operations {
             };
         };
     };
+    get_script_api_v1_projects__project_id__script_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptText"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_script_api_v1_projects__project_id__script_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptText"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_steps_api_v1_projects__project_id__steps_get: {
         parameters: {
             query?: never;
@@ -993,6 +1119,28 @@ export interface operations {
         };
     };
     health_api_v1_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    list_templates_api_v1_templates_get: {
         parameters: {
             query?: never;
             header?: never;

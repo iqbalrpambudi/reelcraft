@@ -33,11 +33,12 @@ Pipeline per project: **Ingest → Analyze → Script → Voice → Edit → Ren
 - [x] Halaman Settings di web, `reelcraft config` di CLI
 
 ## v0.5 Script & Voice
-- [ ] Template narasi (preset + kustom)
-- [ ] Step Script: naskah terstruktur dari LLM berdasarkan topik + scene
-- [ ] Edit naskah di web dan CLI (`$EDITOR`)
-- [ ] Adapter TTS: Gemini, ElevenLabs
-- [ ] Step Voice: audio narasi + timestamp per kata (faster-whisper)
+- [x] Template narasi (preset + instruksi kustom per project, `reelcraft project brief`)
+- [x] Step Script: naskah terstruktur dari LLM berdasarkan topik + scene (`script.md`)
+- [x] Edit naskah di web dan CLI (`reelcraft script`, `$EDITOR`)
+- [x] Adapter TTS: Gemini
+- [ ] Adapter TTS: ElevenLabs
+- [x] Step Voice: audio narasi + timestamp per kata (faster-whisper, diselaraskan ke teks naskah)
 
 ## v0.6 Edit & Render
 - [ ] Step Edit: auto-match scene ke segmen narasi (port `matching.py`)

@@ -6,7 +6,9 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from reelcraft.ai.scripting import TEMPLATES
 from reelcraft.core.errors import NotFound, ReelcraftError
+from reelcraft.pipeline import runner
 from reelcraft.storage.files import project_dir
 from reelcraft.storage.models import Project
 
@@ -18,7 +20,12 @@ class ProjectCreate(BaseModel):
 
 
 class ProjectUpdate(BaseModel):
+    """Only the fields sent change; null clears topic or instructions."""
+
     name: Name | None = None
+    topic: str | None = None
+    template: str | None = None
+    instructions: str | None = None
 
 
 class ProjectOut(BaseModel):
@@ -26,6 +33,9 @@ class ProjectOut(BaseModel):
 
     id: str
     name: str
+    topic: str | None
+    template: str
+    instructions: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -55,7 +65,19 @@ def get(session: Session, project_id: str) -> ProjectOut:
 
 def update(session: Session, project_id: str, data: ProjectUpdate) -> ProjectOut:
     project = _get(session, project_id)
-    for field, value in data.model_dump(exclude_none=True).items():
+    fields = data.model_dump(exclude_unset=True)
+    for required in ("name", "template"):
+        if fields.get(required, "") is None:
+            del fields[required]
+    if fields.get("template", "fakta") not in TEMPLATES:
+        raise ReelcraftError(f"Template tidak dikenal. Pilihan: {', '.join(TEMPLATES)}")
+    for key in ("topic", "instructions"):
+        if key in fields:
+            fields[key] = (fields[key] or "").strip() or None
+    brief = {"topic", "template", "instructions"}
+    if any(getattr(project, k) != v for k, v in fields.items() if k in brief):
+        runner.invalidate(session, project_id, "script")  # the old script no longer fits
+    for field, value in fields.items():
         setattr(project, field, value)
     session.flush()
     return ProjectOut.model_validate(project)
@@ -77,3 +99,8 @@ def resolve_id(session: Session, prefix: str) -> str:
             f"Id {prefix} cocok dengan lebih dari satu project, ketik lebih panjang"
         )
     return ids[0]
+
+
+def templates() -> dict[str, str]:
+    """Narration presets: key to description (empty for the free-form one)."""
+    return TEMPLATES

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import {
   api,
@@ -14,6 +14,8 @@ const STEP_LABEL: Record<string, string> = {
   ingest: 'Ambil media',
   analyze: 'Analisis scene',
   tag: 'Deskripsi AI',
+  script: 'Naskah',
+  voice: 'Suara',
 }
 const BUSY = ['reserved', 'queued', 'running']
 
@@ -122,6 +124,14 @@ export function ProjectPage() {
       </section>
 
       <MediaPanel projectId={id} media={media} disabled={busy} onChange={reload} />
+
+      <ScriptPanel
+        project={project}
+        onProject={setProject}
+        voice={steps.find((s) => s.step === 'voice')}
+        reloads={reloads}
+        disabled={busy}
+      />
 
       <section aria-labelledby="scenes-title">
         <h2 id="scenes-title">Scene ({scenes.length})</h2>
@@ -263,6 +273,145 @@ function MediaPanel({
           </li>
         ))}
       </ul>
+    </section>
+  )
+}
+
+function ScriptPanel({
+  project,
+  onProject,
+  voice,
+  reloads,
+  disabled,
+}: {
+  project: Project
+  onProject: (p: Project) => void
+  voice?: StepRun
+  reloads: number
+  disabled: boolean
+}) {
+  const [templates, setTemplates] = useState<Record<string, string>>({})
+  const [brief, setBrief] = useState({
+    topic: project.topic ?? '',
+    template: project.template,
+    instructions: project.instructions ?? '',
+  })
+  const [text, setText] = useState('')
+  const [savedText, setSavedText] = useState('')
+  const saved = useRef('')
+  const [status, setStatus] = useState('')
+  const path = { project_id: project.id }
+
+  useEffect(() => {
+    api.GET('/api/v1/templates').then(({ data }) => setTemplates(data ?? {}))
+  }, [])
+
+  // Pick up a script the pipeline (re)wrote, unless the user has unsaved edits
+  useEffect(() => {
+    const path = { project_id: project.id }
+    api.GET('/api/v1/projects/{project_id}/script', { params: { path } }).then(({ data }) => {
+      const next = data?.text ?? ''
+      const prev = saved.current
+      saved.current = next
+      setSavedText(next)
+      setText((current) => (current === prev ? next : current))
+    })
+  }, [project.id, reloads])
+
+  const saveBrief = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const { data, error } = await api.PATCH('/api/v1/projects/{project_id}', {
+      params: { path },
+      body: brief,
+    })
+    if (data) onProject(data)
+    setStatus(error ? errorMessage(error) : 'Bahan naskah disimpan.')
+  }
+
+  const saveScript = async () => {
+    const { data, error } = await api.PUT('/api/v1/projects/{project_id}/script', {
+      params: { path },
+      body: { text },
+    })
+    if (data) {
+      saved.current = data.text ?? ''
+      setText(saved.current)
+      setSavedText(saved.current)
+    }
+    setStatus(error ? errorMessage(error) : 'Naskah disimpan. Jalankan lagi untuk membuat suara.')
+  }
+
+  return (
+    <section aria-labelledby="script-title">
+      <h2 id="script-title">Naskah & suara</h2>
+      <form onSubmit={saveBrief} className="settings">
+        <div className="field">
+          <label htmlFor="brief-topic">Topik</label>
+          <input
+            id="brief-topic"
+            placeholder="Kosongkan agar AI menentukan dari scene"
+            value={brief.topic}
+            onChange={(e) => setBrief({ ...brief, topic: e.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="brief-template">Template</label>
+          <select
+            id="brief-template"
+            value={brief.template}
+            onChange={(e) => setBrief({ ...brief, template: e.target.value })}
+          >
+            {Object.keys(templates).map((key) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
+          </select>
+          <span className="small muted">
+            {templates[brief.template] || 'Pakai instruksi di bawah.'}
+          </span>
+        </div>
+        <div className="field">
+          <label htmlFor="brief-instructions">Instruksi tambahan</label>
+          <textarea
+            id="brief-instructions"
+            rows={2}
+            value={brief.instructions}
+            onChange={(e) => setBrief({ ...brief, instructions: e.target.value })}
+          />
+        </div>
+        <div>
+          <button type="submit" disabled={disabled}>
+            Simpan bahan
+          </button>
+        </div>
+      </form>
+
+      <div className="field">
+        <label htmlFor="script-text">Naskah</label>
+        <textarea
+          id="script-text"
+          rows={10}
+          placeholder={'# Judul\n\nParagraf pertama narasi.\n\nParagraf kedua.'}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <span className="small muted">
+          Baris pertama judul (# ...), lalu satu paragraf per segmen.
+        </span>
+      </div>
+      <button type="button" onClick={saveScript} disabled={disabled || text === savedText}>
+        Simpan naskah
+      </button>
+      {status && <p role="status">{status}</p>}
+
+      {voice?.status === 'done' && (
+        <audio
+          controls
+          src={`${fileUrl(project.id, 'voice.wav')}?v=${voice.finished_at}`}
+          aria-label="Narasi"
+        />
+      )}
     </section>
   )
 }

@@ -8,8 +8,11 @@ import pytest
 from pydantic_ai import BinaryContent
 from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
+from pydantic_ai.models.test import TestModel
 
+from reelcraft.ai.tts import _wav
 from reelcraft.core.config import get_settings
+from reelcraft.media.transcribe import Word
 from reelcraft.storage.db import get_engine
 
 
@@ -64,3 +67,21 @@ def offline_vision(monkeypatch) -> None:
     from reelcraft.pipeline.steps import tag
 
     monkeypatch.setattr(tag, "model_for", lambda task: FunctionModel(_describe_every_image))
+
+
+FAKE_SCRIPT = {"title": "Judul uji", "segments": ["Halo semua.", "Ini scene kedua."]}
+
+
+@pytest.fixture(autouse=True)
+def offline_script_and_voice(monkeypatch) -> None:
+    """Script, TTS and Whisper offline: 1 s of silence, heard as the script's words."""
+    from reelcraft.pipeline.steps import script, voice
+
+    monkeypatch.setattr(script, "model_for", lambda task: TestModel(custom_output_args=FAKE_SCRIPT))
+    monkeypatch.setattr(voice, "synthesize", lambda text: _wav(b"\0\0" * 24_000))
+
+    def heard(audio, model, report) -> list[Word]:
+        words = ["halo", "semua", "ini", "scene", "kedua"]
+        return [Word(w, i * 0.2, i * 0.2 + 0.15) for i, w in enumerate(words)]
+
+    monkeypatch.setattr(voice, "transcribe", heard)

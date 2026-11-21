@@ -31,7 +31,13 @@ def test_full_run_ingests_and_analyzes(sample_video):
     pid = _project_with(sample_video)
     events = []
     assert runner.run(pid, listener=lambda *e: events.append(e)) == "done"
-    assert _statuses(pid) == {"ingest": "done", "analyze": "done", "tag": "done"}
+    assert _statuses(pid) == {
+        "ingest": "done",
+        "analyze": "done",
+        "tag": "done",
+        "script": "done",
+        "voice": "done",
+    }
 
     with session_scope() as s:
         [m] = media.list_for(s, pid)
@@ -44,7 +50,13 @@ def test_full_run_ingests_and_analyzes(sample_video):
     assert runner.claim(pid, None, None) == []
     with session_scope() as s:
         media.add(s, pid, str(sample_video))
-    assert _statuses(pid) == {"ingest": "pending", "analyze": "pending", "tag": "pending"}
+    assert _statuses(pid) == {
+        "ingest": "pending",
+        "analyze": "pending",
+        "tag": "pending",
+        "script": "pending",
+        "voice": "pending",
+    }
 
 
 def test_failed_media_fails_the_step_and_stops(tmp_path):
@@ -52,7 +64,13 @@ def test_failed_media_fails_the_step_and_stops(tmp_path):
     bogus.write_text("nope")
     pid = _project_with(bogus)
     assert runner.run(pid) == "failed"
-    assert _statuses(pid) == {"ingest": "failed", "analyze": "pending", "tag": "pending"}
+    assert _statuses(pid) == {
+        "ingest": "failed",
+        "analyze": "pending",
+        "tag": "pending",
+        "script": "pending",
+        "voice": "pending",
+    }
     with session_scope() as s:
         [m] = media.list_for(s, pid)
     assert m.status == "failed" and "bukan video" in (m.error or "")
@@ -79,7 +97,13 @@ def test_cancel_request_stops_at_next_progress(sample_video, monkeypatch):
     monkeypatch.setitem(runner.STEPS, "ingest", slow_step)
     pid = _project_with(sample_video)
     assert runner.run(pid) == "cancelled"
-    assert _statuses(pid) == {"ingest": "cancelled", "analyze": "pending", "tag": "pending"}
+    assert _statuses(pid) == {
+        "ingest": "cancelled",
+        "analyze": "pending",
+        "tag": "pending",
+        "script": "pending",
+        "voice": "pending",
+    }
 
 
 def test_claim_rejects_double_run_and_bad_ranges(sample_video):
@@ -88,12 +112,24 @@ def test_claim_rejects_double_run_and_bad_ranges(sample_video):
         runner.claim(pid, "render", None)
     with pytest.raises(ReelcraftError, match="setelah"):
         runner.claim(pid, "analyze", "ingest")
-    assert runner.claim(pid, None, None) == ["ingest", "analyze", "tag"]
-    assert _statuses(pid) == {"ingest": "reserved", "analyze": "reserved", "tag": "reserved"}
+    assert runner.claim(pid, None, None) == ["ingest", "analyze", "tag", "script", "voice"]
+    assert _statuses(pid) == {
+        "ingest": "reserved",
+        "analyze": "reserved",
+        "tag": "reserved",
+        "script": "reserved",
+        "voice": "reserved",
+    }
     with pytest.raises(ReelcraftError, match="sedang diproses"):
         runner.claim(pid, None, None, queue=True)
     runner.recover_interrupted()  # the reserving process is gone
-    assert _statuses(pid) == {"ingest": "pending", "analyze": "pending", "tag": "pending"}
+    assert _statuses(pid) == {
+        "ingest": "pending",
+        "analyze": "pending",
+        "tag": "pending",
+        "script": "pending",
+        "voice": "pending",
+    }
 
 
 def test_server_queue_is_fifo_and_ignores_cli_reservations(sample_video):
@@ -104,12 +140,30 @@ def test_server_queue_is_fifo_and_ignores_cli_reservations(sample_video):
 
     assert runner.next_queued() == (first, ["ingest"])
     assert worker.run_next()
-    assert runner.next_queued() == (second, ["ingest", "analyze", "tag"])
+    assert runner.next_queued() == (second, ["ingest", "analyze", "tag", "script", "voice"])
     assert worker.run_next()
     assert not worker.run_next()
-    assert _statuses(first) == {"ingest": "done", "analyze": "pending", "tag": "pending"}
-    assert _statuses(second) == {"ingest": "done", "analyze": "done", "tag": "done"}
-    assert _statuses(cli) == {"ingest": "reserved", "analyze": "reserved", "tag": "reserved"}
+    assert _statuses(first) == {
+        "ingest": "done",
+        "analyze": "pending",
+        "tag": "pending",
+        "script": "pending",
+        "voice": "pending",
+    }
+    assert _statuses(second) == {
+        "ingest": "done",
+        "analyze": "done",
+        "tag": "done",
+        "script": "done",
+        "voice": "done",
+    }
+    assert _statuses(cli) == {
+        "ingest": "reserved",
+        "analyze": "reserved",
+        "tag": "reserved",
+        "script": "reserved",
+        "voice": "reserved",
+    }
 
 
 def test_recovery_drops_steps_behind_a_dead_run_but_keeps_other_queues(sample_video):
@@ -120,8 +174,20 @@ def test_recovery_drops_steps_behind_a_dead_run_but_keeps_other_queues(sample_vi
         s.get(StepRun, (dead, "ingest")).status = "running"
 
     runner.recover_interrupted()
-    assert _statuses(dead) == {"ingest": "failed", "analyze": "pending", "tag": "pending"}
-    assert _statuses(waiting) == {"ingest": "queued", "analyze": "queued", "tag": "queued"}
+    assert _statuses(dead) == {
+        "ingest": "failed",
+        "analyze": "pending",
+        "tag": "pending",
+        "script": "pending",
+        "voice": "pending",
+    }
+    assert _statuses(waiting) == {
+        "ingest": "queued",
+        "analyze": "queued",
+        "tag": "queued",
+        "script": "queued",
+        "voice": "queued",
+    }
 
 
 def test_add_missing_local_file_is_rejected():
